@@ -23,7 +23,9 @@
 |------|-------|------|
 | Tech Lead | `tech-lead` | Plans, work breakdown, acceptance criteria |
 | {{FRAMEWORK}} Engineer | `rails-engineer` | Backend code and business logic |
+| Frontend Engineer | `frontend-engineer` | UI, styling, interactivity, accessibility |
+| Database Engineer | `database-engineer` | Schema, migrations, indexes, data integrity |
 | QA Engineer | `qa-engineer` | Tests, verification, the done-signal |
 
-_Additional specialists (frontend, database, security, performance, devops,
-documentation) are part of the roadmap and added as the project needs them._
+_Additional specialists (security, performance, devops, documentation) are part of
+the roadmap and added as the project needs them._
