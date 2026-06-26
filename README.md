@@ -35,20 +35,67 @@ The boundary, in one line: **agents = who, skills = how, playbooks = the sequenc
 
 ---
 
-## Install into a project
+## Quick start — add the team to any project
+
+The framework lives in its own repo and installs into your project with one
+command. You only clone this repo once; from then on you can `ait init` it into as
+many projects as you like.
+
+**1. Clone this repo** (somewhere outside your project — it's a reusable tool):
 
 ```bash
-# from a clone of this repo:
-/path/to/ai-engineering-team/bin/ait init /path/to/your/project
+git clone https://github.com/JAKEDAHLGREN/ai-engineering-team.git ~/tools/ai-engineering-team
 ```
 
-`ait init` copies the team shell into your project and interactively asks for the
-project name, stack, and test command, filling those into the agent and
-organization files. It refuses to overwrite an existing install.
+**2. Run the scaffolder, pointing it at your project:**
 
-After install, open the project in Claude Code and ask for a feature — the
-Conductor (`CLAUDE.md`) takes it from there. Then fill in the `TODO`s in
-`.ai/organization/` to onboard the team to your codebase.
+```bash
+~/tools/ai-engineering-team/bin/ait init /path/to/your/project
+```
+
+**3. Answer the prompts.** It asks for your project name, stack, and test command,
+then fills those into the agent and organization files. Press Enter to accept a
+default (defaults are Ruby / Rails / PostgreSQL / `bin/rails test`).
+
+```
+Project name [your-project]:
+One-line description [A software project.]:
+Primary language [Ruby]:
+Framework [Rails]:
+Database [PostgreSQL]:
+Frontend [Hotwire/Stimulus + TailwindCSS]:
+Test command [bin/rails test]:
+```
+
+That creates `CLAUDE.md`, `.claude/`, and `.ai/` in your project. (It refuses to
+overwrite an existing install — remove those first to reinstall.)
+
+**4. Onboard the team to your codebase.** Open `.ai/organization/` and fill in the
+`TODO`s — at minimum `architecture.md` and any project-specific rules in
+`coding_standards.md`. This is the shared context every agent loads before working;
+the better it is, the better the team performs.
+
+**5. Commit the team into your project** so it's versioned alongside your code:
+
+```bash
+cd /path/to/your/project
+git add CLAUDE.md .claude .ai && git commit -m "Add AI Engineering Team"
+```
+
+**6. Use it.** Open the project in Claude Code and just ask for a feature — e.g.
+*"Add CSV export to the invoices page."* The Conductor (`CLAUDE.md`) plans it,
+dispatches the Tech Lead, Rails Engineer, and QA Engineer, and won't call it done
+until the test suite is green.
+
+> **Tip:** put `ait` on your `PATH` to skip the long path —
+> `ln -s ~/tools/ai-engineering-team/bin/ait /usr/local/bin/ait`, then just
+> `ait init /path/to/your/project`.
+
+### Updating an installed project later
+Pull this repo for the newest agents/skills, then re-run `ait init` into a fresh
+temporary dir and copy over the pieces you want — or, since the team files are
+committed in your project, just edit them in place. The framework is plain markdown
+and one bash script; there's nothing to "upgrade" beyond the files themselves.
 
 ---
 
