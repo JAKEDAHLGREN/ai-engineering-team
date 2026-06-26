@@ -67,8 +67,12 @@ Frontend [Hotwire/Stimulus + TailwindCSS]:
 Test command [bin/rails test]:
 ```
 
-That creates `CLAUDE.md`, `.claude/`, and `.ai/` in your project. (It refuses to
-overwrite an existing install — remove those first to reinstall.)
+**`ait init` merges cleanly — including into projects that already use Claude
+Code.** The Conductor is added as a clearly-marked managed block inside your
+`CLAUDE.md` (an existing `CLAUDE.md` is **preserved**, the block is appended). The
+`.claude/` and `.ai/` trees are merged file-by-file: any file you already have is
+**kept, never overwritten** — `ait` reports what it added and what it kept. Review
+it with `git status` before committing.
 
 **4. Onboard the team to your codebase.** Open `.ai/organization/` and fill in the
 `TODO`s — at minimum `architecture.md` and any project-specific rules in
@@ -101,10 +105,11 @@ cd ~/tools/ai-engineering-team && git pull        # get the latest framework
 ~/tools/ai-engineering-team/bin/ait update /path/to/your/project
 ```
 
-`ait update` refreshes **only the framework-owned files** — the Conductor, agents,
-skills, and shipped playbooks — re-rendered with the answers you gave at install
-(saved in `.ai/.ait-manifest`). It explicitly **never touches** your project-owned
-knowledge:
+`ait update` refreshes **only the framework-owned files** — the Conductor block in
+`CLAUDE.md`, agents, skills, and shipped playbooks — re-rendered with the answers
+you gave at install (saved in `.ai/.ait-manifest`). The Conductor block is replaced
+in place between its markers, so the rest of your `CLAUDE.md` is left exactly as-is.
+It explicitly **never touches** your project-owned knowledge:
 
 - `.ai/organization/` — your architecture, standards, and decisions
 - `.ai/memory/` — your recorded decisions, debt, and history
