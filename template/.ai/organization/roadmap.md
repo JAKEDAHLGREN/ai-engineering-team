@@ -12,9 +12,9 @@ _TODO: queued work, in rough priority order._
 _TODO: known-wanted but not yet scheduled._
 
 ## Team roadmap (this framework)
-The AI engineering team itself grows here. The Conductor coordinates Tech Lead,
-{{FRAMEWORK}} Engineer, Frontend Engineer, Database Engineer, Security Engineer,
-Performance Engineer, and QA Engineer, exercised by the `feature_request` and
-`production_incident` playbooks. Planned additions: devops and documentation agents;
-more skills and playbooks; and event-driven triggers (PR opened, CI failure, etc.)
-once the core loop is proven.
+The AI engineering team itself grows here. The Conductor coordinates the full
+roster — Tech Lead, {{FRAMEWORK}} Engineer, Frontend, Database, Security,
+Performance, DevOps, Documentation, and QA Engineers — exercised by the
+`feature_request` and `production_incident` playbooks. Planned additions: more
+skills and playbooks (e.g. `release`); and event-driven triggers (PR opened, CI
+failure, etc.) now that the roster is complete.

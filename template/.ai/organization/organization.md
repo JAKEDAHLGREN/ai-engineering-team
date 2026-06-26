@@ -27,7 +27,6 @@
 | Database Engineer | `database-engineer` | Schema, migrations, indexes, data integrity |
 | Security Engineer | `security-engineer` | Auth, secrets, input validation, OWASP risks |
 | Performance Engineer | `performance-engineer` | Hot paths, query/index tuning, caching, profiling |
+| DevOps Engineer | `devops-engineer` | CI/CD, deploys, rollbacks, monitoring, observability |
+| Documentation Engineer | `documentation-engineer` | READMEs, API docs, ADRs, guides, release notes |
 | QA Engineer | `qa-engineer` | Tests, verification, the done-signal |
-
-_Additional specialists (devops, documentation) are part of the roadmap and added
-as the project needs them._

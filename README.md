@@ -129,6 +129,8 @@ your-project/
 │   │   ├── database-engineer.md    # schema, migrations, indexes, integrity
 │   │   ├── security-engineer.md    # auth, secrets, input validation, OWASP risks
 │   │   ├── performance-engineer.md # hot paths, query/index tuning, profiling
+│   │   ├── devops-engineer.md      # CI/CD, deploys, rollbacks, observability
+│   │   ├── documentation-engineer.md # READMEs, API docs, ADRs, release notes
 │   │   └── qa-engineer.md          # runs tests, owns the objective done-signal
 │   └── skills/
 │       ├── add-feature/SKILL.md
@@ -187,17 +189,20 @@ criteria.
 
 ---
 
-## Roadmap (not yet built)
+## Roadmap
 
-v1 is deliberately one vertical slice. Planned, explicitly *not* shipped yet:
+**Shipped:** the full nine-role roster (Tech Lead, Rails, Frontend, Database,
+Security, Performance, DevOps, Documentation, QA); the `add-feature`, `run-tests`,
+`security-review`, and `optimize-query` skills; and the `feature_request` and
+`production_incident` playbooks.
 
-- The remaining specialists: frontend, database, security, performance, devops,
-  documentation.
-- More skills and playbooks (review PR, optimize query, deploy, incident response,
-  write migration, security review, release, dependency upgrade).
+**Planned, not yet shipped:**
+
+- More skills and playbooks (e.g. `deploy`, `review-pr`, `write-migration`, and a
+  `release` playbook to round out coordination scenarios).
 - **Event-driven triggers** (PR opened → review, CI failure → QA, etc.). These
   require GitHub Actions / webhook infrastructure and are real work, not markdown —
-  added after the core loop is proven.
+  the natural next step now that the roster is complete.
 - Stack-agnostic agent templates beyond the current Rails-first defaults.
 
 The objective isn't more agents — it's a more capable engineering organization,
