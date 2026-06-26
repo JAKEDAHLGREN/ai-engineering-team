@@ -281,8 +281,8 @@ cmd_update() {
   echo "  preserving your .ai/organization/, .ai/memory/, and anything you added."
   echo
 
-  local backup_dir="$target/.ai/.ait-backups/$(date +%Y%m%d-%H%M%S)"
-  local refreshed=0 added=0 backed_up=0 tfile rel dest
+  local backup_dir refreshed=0 added=0 backed_up=0 tfile rel dest
+  backup_dir="$target/.ai/.ait-backups/$(date +%Y%m%d-%H%M%S)"
 
   while IFS= read -r -d '' tfile; do
     rel="${tfile#"$TEMPLATE_DIR"/}"
