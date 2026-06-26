@@ -2,20 +2,18 @@
 #
 # ait — AI Engineering Team scaffolder
 #
-# Installs and updates the AI Engineering Team framework in a target project.
+# Installs and updates the AI Engineering Team framework in a target project,
+# merging cleanly into projects that already use Claude Code.
 #
 # Usage:
 #   ait init   [TARGET_DIR]   Install into TARGET_DIR (default: current directory)
 #   ait update [TARGET_DIR]   Refresh framework files in an existing install
 #   ait help                  Show this help
 #
-# `init` copies the team shell (CLAUDE.md, .claude/, .ai/) into your project and
-# fills in project-specific placeholders, recording your answers in a manifest.
-#
-# `update` re-copies only the framework-owned files (Conductor, agents, skills,
-# shipped playbooks) using the saved manifest answers. It NEVER touches your
-# project-owned knowledge in .ai/organization/ or .ai/memory/, and never deletes
-# files you added yourself. Overwritten files are backed up first.
+# The Conductor is installed as a clearly-marked managed block inside the project's
+# CLAUDE.md — so an existing CLAUDE.md is preserved, not overwritten. The .claude/
+# and .ai/ trees are merged file-by-file: `init` never clobbers a file you already
+# have, and `update` only refreshes framework-owned files (and backs them up first).
 
 set -euo pipefail
 
@@ -27,6 +25,12 @@ MANIFEST_REL=".ai/.ait-manifest"
 
 # Trees that belong to the project, not the framework. `update` never touches them.
 PROJECT_OWNED=(".ai/organization" ".ai/memory")
+
+# Markers delimiting the managed Conductor block inside the project's CLAUDE.md.
+# These strings are static — do not template them, or block detection breaks.
+CONDUCTOR_START="<!-- ai-engineering-team:start (managed by ait — do not edit between these markers; overwritten on update) -->"
+CONDUCTOR_END="<!-- ai-engineering-team:end -->"
+CONDUCTOR_ACTION=""
 
 # Placeholder values. Populated from prompts (init) or the manifest (update).
 PROJECT_NAME="" PROJECT_DESCRIPTION="" PRIMARY_LANGUAGE="" FRAMEWORK=""
@@ -45,13 +49,15 @@ Usage:
   ait update [TARGET_DIR]   Refresh framework files in an existing install
   ait help                  Show this help
 
-init    Copies the team shell into your project, fills in project-specific
-        details interactively, and records them in .ai/.ait-manifest.
+init    Merges the team into your project. The Conductor is added as a managed
+        block inside CLAUDE.md (your existing CLAUDE.md is preserved). The .claude/
+        and .ai/ trees are merged file-by-file — existing files are kept, never
+        overwritten. Your answers are recorded in .ai/.ait-manifest.
 
-update  Re-copies only framework-owned files (Conductor, agents, skills, shipped
-        playbooks) from the latest framework, re-rendered with your saved answers.
-        Your .ai/organization/ brain and .ai/memory/ are left untouched, and files
-        you added yourself are never deleted. Overwritten files are backed up to
+update  Re-renders framework-owned files (Conductor block, agents, skills, shipped
+        playbooks) from the latest framework using your saved answers. Your
+        .ai/organization/ brain and .ai/memory/ are left untouched, files you added
+        yourself are never deleted, and overwritten files are backed up to
         .ai/.ait-backups/<timestamp>/ first.
 EOF
 }
@@ -118,6 +124,35 @@ is_project_owned() {
   return 1
 }
 
+# sync_conductor_block TARGET  -> insert/replace the Conductor managed block in
+# the project's CLAUDE.md, rendered with the current placeholder values. The rest
+# of an existing CLAUDE.md is left exactly as-is.
+sync_conductor_block() {
+  local target="$1" claude="$target/CLAUDE.md" body block
+  body="$(mktemp)"; block="$(mktemp)"
+  cp "$TEMPLATE_DIR/CLAUDE.md" "$body"
+  render_file "$body"
+  { printf '%s\n' "$CONDUCTOR_START"; cat "$body"; printf '%s\n' "$CONDUCTOR_END"; } > "$block"
+
+  if [ -f "$claude" ] && grep -qF "$CONDUCTOR_START" "$claude"; then
+    # Replace the existing managed block, preserving everything around it.
+    awk -v s="$CONDUCTOR_START" -v e="$CONDUCTOR_END" -v bf="$block" '
+      index($0, s) { while ((getline line < bf) > 0) print line; close(bf); inblock=1; next }
+      inblock && index($0, e) { inblock=0; next }
+      !inblock { print }
+    ' "$claude" > "$claude.tmp" && mv "$claude.tmp" "$claude"
+    CONDUCTOR_ACTION="refreshed the Conductor block in your CLAUDE.md"
+  elif [ -f "$claude" ]; then
+    # Append the block, preserving the user's existing CLAUDE.md content.
+    { printf '\n'; cat "$block"; } >> "$claude"
+    CONDUCTOR_ACTION="added the Conductor block to your existing CLAUDE.md (your content kept)"
+  else
+    cp "$block" "$claude"
+    CONDUCTOR_ACTION="created CLAUDE.md with the Conductor block"
+  fi
+  rm -f "$body" "$block"
+}
+
 resolve_target() {
   local raw="$1" resolved
   resolved="$(cd "$raw" 2>/dev/null && pwd)" || {
@@ -136,16 +171,9 @@ cmd_init() {
 
   echo "Installing AI Engineering Team into: $target"
 
-  # Refuse to clobber an existing install before asking the user anything.
-  local conflicts=0 rel
-  for rel in "CLAUDE.md" ".claude" ".ai"; do
-    if [ -e "$target/$rel" ]; then
-      echo "  ! $rel already exists in target — use \`ait update\`, or remove it to reinstall" >&2
-      conflicts=1
-    fi
-  done
-  if [ "$conflicts" -eq 1 ]; then
-    echo "ait: nothing to do due to conflicts above." >&2
+  if [ -f "$target/$MANIFEST_REL" ]; then
+    echo "ait: already installed here (found $MANIFEST_REL)." >&2
+    echo "ait: use \`ait update\` to refresh the framework files." >&2
     exit 1
   fi
 
@@ -161,28 +189,39 @@ cmd_init() {
   TODAY="$(date +%Y-%m-%d)"
 
   echo
-  echo "Copying files..."
-  cp "$TEMPLATE_DIR/CLAUDE.md" "$target/CLAUDE.md"
-  cp -R "$TEMPLATE_DIR/.claude" "$target/.claude"
-  cp -R "$TEMPLATE_DIR/.ai" "$target/.ai"
+  echo "Merging team files (existing files are kept, never overwritten)..."
 
-  echo "Filling in project details..."
-  local file
-  while IFS= read -r -d '' file; do
-    render_file "$file"
-  done < <(find "$target/.claude" "$target/.ai" "$target/CLAUDE.md" -type f -print0)
+  # Merge the template trees file-by-file. CLAUDE.md is the Conductor and is
+  # handled separately as a managed block, so it's skipped here.
+  local tfile rel dest added=0 skipped=0
+  while IFS= read -r -d '' tfile; do
+    rel="${tfile#"$TEMPLATE_DIR"/}"
+    [ "$rel" = "CLAUDE.md" ] && continue
 
+    dest="$target/$rel"
+    if [ -e "$dest" ]; then
+      skipped=$((skipped + 1))
+      echo "  = kept     $rel (you already have this)"
+      continue
+    fi
+    mkdir -p "$(dirname "$dest")"
+    cp "$tfile" "$dest"
+    render_file "$dest"
+    added=$((added + 1))
+  done < <(find "$TEMPLATE_DIR" -type f -print0)
+
+  sync_conductor_block "$target"
   write_manifest "$target"
 
   echo
   echo "Done. The AI Engineering Team is installed in $target"
-  echo "  • Conductor:  CLAUDE.md"
-  echo "  • Agents:     .claude/agents/"
-  echo "  • Skills:     .claude/skills/"
+  echo "  • Conductor:  $CONDUCTOR_ACTION"
+  echo "  • Added $added team files; kept $skipped of your existing files."
+  echo "  • Agents:     .claude/agents/    Skills: .claude/skills/"
   echo "  • Brain:      .ai/organization/  (fill in the TODOs to onboard the team)"
-  echo "  • Playbooks:  .ai/playbooks/"
-  echo "  • Memory:     .ai/memory/INDEX.md"
+  echo "  • Playbooks:  .ai/playbooks/     Memory: .ai/memory/INDEX.md"
   echo "  • Manifest:   $MANIFEST_REL  (lets \`ait update\` refresh you later)"
+  echo "  Review what changed with: git -C \"$target\" status"
 }
 
 cmd_update() {
@@ -209,7 +248,7 @@ cmd_update() {
 
   echo "Updating AI Engineering Team in: $target"
   echo "  project: $PROJECT_NAME  ·  was version: ${AIT_FRAMEWORK_VERSION:-unknown}  ·  now: $(framework_version)"
-  echo "  preserving your .ai/organization/ and .ai/memory/ (and anything you added)."
+  echo "  preserving your .ai/organization/, .ai/memory/, and anything you added."
   echo
 
   local backup_dir="$target/.ai/.ait-backups/$(date +%Y%m%d-%H%M%S)"
@@ -217,7 +256,8 @@ cmd_update() {
 
   while IFS= read -r -d '' tfile; do
     rel="${tfile#"$TEMPLATE_DIR"/}"
-    is_project_owned "$rel" && continue   # never touch the brain or memory
+    [ "$rel" = "CLAUDE.md" ] && continue   # Conductor handled as a managed block
+    is_project_owned "$rel" && continue    # never touch the brain or memory
 
     dest="$target/$rel"
     mkdir -p "$(dirname "$dest")"
@@ -237,14 +277,15 @@ cmd_update() {
     render_file "$dest"
   done < <(find "$TEMPLATE_DIR" -type f -print0)
 
+  sync_conductor_block "$target"
   write_manifest "$target"
 
   echo
-  echo "Update complete: $refreshed refreshed, $added added."
+  echo "Update complete: $refreshed refreshed, $added added; $CONDUCTOR_ACTION."
   if [ "$backed_up" -gt 0 ]; then
     echo "Backups of overwritten files: ${backup_dir#"$target"/}"
-    echo "Review changes with: git -C \"$target\" diff"
   fi
+  echo "Review changes with: git -C \"$target\" diff"
   echo "Untouched (yours): .ai/organization/, .ai/memory/, and any files you added."
 }
 
