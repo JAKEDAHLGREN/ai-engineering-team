@@ -123,20 +123,25 @@ your-project/
 ├── CLAUDE.md                     # the Conductor (main-thread orchestrator)
 ├── .claude/
 │   ├── agents/
-│   │   ├── tech-lead.md          # plans work, sets acceptance criteria
-│   │   ├── rails-engineer.md     # implements backend code
-│   │   ├── frontend-engineer.md  # UI, styling, interactivity, accessibility
-│   │   ├── database-engineer.md  # schema, migrations, indexes, integrity
-│   │   └── qa-engineer.md        # runs tests, owns the objective done-signal
+│   │   ├── tech-lead.md            # plans work, sets acceptance criteria
+│   │   ├── rails-engineer.md       # implements backend code
+│   │   ├── frontend-engineer.md    # UI, styling, interactivity, accessibility
+│   │   ├── database-engineer.md    # schema, migrations, indexes, integrity
+│   │   ├── security-engineer.md    # auth, secrets, input validation, OWASP risks
+│   │   ├── performance-engineer.md # hot paths, query/index tuning, profiling
+│   │   └── qa-engineer.md          # runs tests, owns the objective done-signal
 │   └── skills/
 │       ├── add-feature/SKILL.md
-│       └── run-tests/SKILL.md
+│       ├── run-tests/SKILL.md
+│       ├── security-review/SKILL.md
+│       └── optimize-query/SKILL.md
 └── .ai/
     ├── organization/             # the shared brain every agent loads first
     │   ├── organization.md  architecture.md  coding_standards.md
     │   ├── roadmap.md  decision_log.md  glossary.md
     ├── playbooks/
-    │   └── feature_request.md    # the end-to-end workflow
+    │   ├── feature_request.md    # build a feature end-to-end
+    │   └── production_incident.md # stabilize, diagnose, fix, postmortem
     └── memory/
         ├── INDEX.md              # read first; the retrieval entrypoint
         ├── decisions/

@@ -25,7 +25,9 @@
 | {{FRAMEWORK}} Engineer | `rails-engineer` | Backend code and business logic |
 | Frontend Engineer | `frontend-engineer` | UI, styling, interactivity, accessibility |
 | Database Engineer | `database-engineer` | Schema, migrations, indexes, data integrity |
+| Security Engineer | `security-engineer` | Auth, secrets, input validation, OWASP risks |
+| Performance Engineer | `performance-engineer` | Hot paths, query/index tuning, caching, profiling |
 | QA Engineer | `qa-engineer` | Tests, verification, the done-signal |
 
-_Additional specialists (security, performance, devops, documentation) are part of
-the roadmap and added as the project needs them._
+_Additional specialists (devops, documentation) are part of the roadmap and added
+as the project needs them._
