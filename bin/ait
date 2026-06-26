@@ -2,30 +2,57 @@
 #
 # ait — AI Engineering Team scaffolder
 #
-# Installs the AI Engineering Team framework into a target project by copying the
-# reusable shell (template/) and filling in project-specific placeholders.
+# Installs and updates the AI Engineering Team framework in a target project.
 #
 # Usage:
-#   ait init [TARGET_DIR]     Install into TARGET_DIR (default: current directory)
+#   ait init   [TARGET_DIR]   Install into TARGET_DIR (default: current directory)
+#   ait update [TARGET_DIR]   Refresh framework files in an existing install
 #   ait help                  Show this help
+#
+# `init` copies the team shell (CLAUDE.md, .claude/, .ai/) into your project and
+# fills in project-specific placeholders, recording your answers in a manifest.
+#
+# `update` re-copies only the framework-owned files (Conductor, agents, skills,
+# shipped playbooks) using the saved manifest answers. It NEVER touches your
+# project-owned knowledge in .ai/organization/ or .ai/memory/, and never deletes
+# files you added yourself. Overwritten files are backed up first.
 
 set -euo pipefail
 
-# Resolve the framework root (the directory containing this script's parent).
+# Resolve the framework root (this script's parent directory).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRAMEWORK_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TEMPLATE_DIR="$FRAMEWORK_ROOT/template"
+MANIFEST_REL=".ai/.ait-manifest"
+
+# Trees that belong to the project, not the framework. `update` never touches them.
+PROJECT_OWNED=(".ai/organization" ".ai/memory")
+
+# Placeholder values. Populated from prompts (init) or the manifest (update).
+PROJECT_NAME="" PROJECT_DESCRIPTION="" PRIMARY_LANGUAGE="" FRAMEWORK=""
+DATABASE="" FRONTEND="" TEST_COMMAND="" TODAY=""
+
+# Portable in-place sed (GNU vs BSD/macOS).
+SED_INPLACE=(-i)
+sed --version >/dev/null 2>&1 || SED_INPLACE=(-i '')
 
 usage() {
   cat <<'EOF'
 ait — AI Engineering Team scaffolder
 
 Usage:
-  ait init [TARGET_DIR]   Install the framework into TARGET_DIR (default: ".")
-  ait help                Show this help
+  ait init   [TARGET_DIR]   Install the framework into TARGET_DIR (default: ".")
+  ait update [TARGET_DIR]   Refresh framework files in an existing install
+  ait help                  Show this help
 
-`ait init` copies the team shell (CLAUDE.md, .claude/agents, .claude/skills,
-.ai/) into your project and interactively fills in project-specific details.
+init    Copies the team shell into your project, fills in project-specific
+        details interactively, and records them in .ai/.ait-manifest.
+
+update  Re-copies only framework-owned files (Conductor, agents, skills, shipped
+        playbooks) from the latest framework, re-rendered with your saved answers.
+        Your .ai/organization/ brain and .ai/memory/ are left untouched, and files
+        you added yourself are never deleted. Overwritten files are backed up to
+        .ai/.ait-backups/<timestamp>/ first.
 EOF
 }
 
@@ -42,22 +69,78 @@ prompt() {
   printf -v "$__var" '%s' "$__reply"
 }
 
-cmd_init() {
-  local target="${1:-.}"
-  target="$(cd "$target" 2>/dev/null && pwd || { echo "ait: target dir '$1' does not exist" >&2; exit 1; })"
+# Escape a replacement string for use on the right-hand side of sed s///.
+esc() { printf '%s' "$1" | sed -e 's/[&/\]/\\&/g'; }
 
-  if [ ! -d "$TEMPLATE_DIR" ]; then
-    echo "ait: cannot find template/ at $TEMPLATE_DIR" >&2
-    exit 1
-  fi
+# render_file FILE  -> substitute all placeholders in FILE in place.
+render_file() {
+  sed "${SED_INPLACE[@]}" \
+    -e "s/{{PROJECT_NAME}}/$(esc "$PROJECT_NAME")/g" \
+    -e "s/{{PROJECT_DESCRIPTION}}/$(esc "$PROJECT_DESCRIPTION")/g" \
+    -e "s/{{PRIMARY_LANGUAGE}}/$(esc "$PRIMARY_LANGUAGE")/g" \
+    -e "s/{{FRAMEWORK}}/$(esc "$FRAMEWORK")/g" \
+    -e "s/{{DATABASE}}/$(esc "$DATABASE")/g" \
+    -e "s/{{FRONTEND}}/$(esc "$FRONTEND")/g" \
+    -e "s/{{TEST_COMMAND}}/$(esc "$TEST_COMMAND")/g" \
+    -e "s/{{TODAY}}/$(esc "$TODAY")/g" \
+    "$1"
+}
+
+# framework_version -> short commit of the framework repo, or "unknown".
+framework_version() {
+  git -C "$FRAMEWORK_ROOT" rev-parse --short HEAD 2>/dev/null || echo "unknown"
+}
+
+# write_manifest TARGET  -> persist the answers so `update` can re-render later.
+write_manifest() {
+  local target="$1"
+  cat > "$target/$MANIFEST_REL" <<EOF
+# AI Engineering Team install manifest — used by \`ait update\`. Safe to edit.
+AIT_PROJECT_NAME="$PROJECT_NAME"
+AIT_PROJECT_DESCRIPTION="$PROJECT_DESCRIPTION"
+AIT_PRIMARY_LANGUAGE="$PRIMARY_LANGUAGE"
+AIT_FRAMEWORK="$FRAMEWORK"
+AIT_DATABASE="$DATABASE"
+AIT_FRONTEND="$FRONTEND"
+AIT_TEST_COMMAND="$TEST_COMMAND"
+AIT_INSTALLED_AT="${AIT_INSTALLED_AT:-$(date +%Y-%m-%dT%H:%M:%S%z)}"
+AIT_UPDATED_AT="$(date +%Y-%m-%dT%H:%M:%S%z)"
+AIT_FRAMEWORK_VERSION="$(framework_version)"
+EOF
+}
+
+# is_project_owned REL_PATH -> 0 if the path lives under a project-owned tree.
+is_project_owned() {
+  local rel="$1" owned
+  for owned in "${PROJECT_OWNED[@]}"; do
+    [[ "$rel" == "$owned" || "$rel" == "$owned/"* ]] && return 0
+  done
+  return 1
+}
+
+resolve_target() {
+  local raw="$1" resolved
+  resolved="$(cd "$raw" 2>/dev/null && pwd)" || {
+    echo "ait: target dir '$raw' does not exist" >&2; exit 1
+  }
+  printf '%s' "$resolved"
+}
+
+require_template() {
+  [ -d "$TEMPLATE_DIR" ] || { echo "ait: cannot find template/ at $TEMPLATE_DIR" >&2; exit 1; }
+}
+
+cmd_init() {
+  local target; target="$(resolve_target "${1:-.}")"
+  require_template
 
   echo "Installing AI Engineering Team into: $target"
 
   # Refuse to clobber an existing install before asking the user anything.
-  local conflicts=0
+  local conflicts=0 rel
   for rel in "CLAUDE.md" ".claude" ".ai"; do
     if [ -e "$target/$rel" ]; then
-      echo "  ! $rel already exists in target — remove it first to reinstall" >&2
+      echo "  ! $rel already exists in target — use \`ait update\`, or remove it to reinstall" >&2
       conflicts=1
     fi
   done
@@ -68,44 +151,28 @@ cmd_init() {
 
   echo "Answer a few questions so the agents know your project (Enter accepts the default)."
   echo
-
-  local PROJECT_NAME PROJECT_DESCRIPTION PRIMARY_LANGUAGE FRAMEWORK DATABASE FRONTEND TEST_COMMAND
-  prompt PROJECT_NAME        "Project name"                "$(basename "$target")"
-  prompt PROJECT_DESCRIPTION "One-line description"        "A software project."
-  prompt PRIMARY_LANGUAGE    "Primary language"            "Ruby"
-  prompt FRAMEWORK           "Framework"                   "Rails"
-  prompt DATABASE            "Database"                    "PostgreSQL"
-  prompt FRONTEND            "Frontend"                    "Hotwire/Stimulus + TailwindCSS"
-  prompt TEST_COMMAND        "Test command"               "bin/rails test"
-  local TODAY; TODAY="$(date +%Y-%m-%d)"
+  prompt PROJECT_NAME        "Project name"          "$(basename "$target")"
+  prompt PROJECT_DESCRIPTION "One-line description"  "A software project."
+  prompt PRIMARY_LANGUAGE    "Primary language"      "Ruby"
+  prompt FRAMEWORK           "Framework"             "Rails"
+  prompt DATABASE            "Database"              "PostgreSQL"
+  prompt FRONTEND            "Frontend"              "Hotwire/Stimulus + TailwindCSS"
+  prompt TEST_COMMAND        "Test command"          "bin/rails test"
+  TODAY="$(date +%Y-%m-%d)"
 
   echo
   echo "Copying files..."
-
   cp "$TEMPLATE_DIR/CLAUDE.md" "$target/CLAUDE.md"
   cp -R "$TEMPLATE_DIR/.claude" "$target/.claude"
   cp -R "$TEMPLATE_DIR/.ai" "$target/.ai"
 
   echo "Filling in project details..."
-  # Replace placeholders across every copied file. Uses a NUL-delimited find so
-  # paths with spaces are safe, and a portable sed in-place edit.
-  local sed_inplace=(-i)
-  if sed --version >/dev/null 2>&1; then :; else sed_inplace=(-i ''); fi  # BSD/macOS sed
-
-  esc() { printf '%s' "$1" | sed -e 's/[&/\]/\\&/g'; }
-
+  local file
   while IFS= read -r -d '' file; do
-    sed "${sed_inplace[@]}" \
-      -e "s/{{PROJECT_NAME}}/$(esc "$PROJECT_NAME")/g" \
-      -e "s/{{PROJECT_DESCRIPTION}}/$(esc "$PROJECT_DESCRIPTION")/g" \
-      -e "s/{{PRIMARY_LANGUAGE}}/$(esc "$PRIMARY_LANGUAGE")/g" \
-      -e "s/{{FRAMEWORK}}/$(esc "$FRAMEWORK")/g" \
-      -e "s/{{DATABASE}}/$(esc "$DATABASE")/g" \
-      -e "s/{{FRONTEND}}/$(esc "$FRONTEND")/g" \
-      -e "s/{{TEST_COMMAND}}/$(esc "$TEST_COMMAND")/g" \
-      -e "s/{{TODAY}}/$(esc "$TODAY")/g" \
-      "$file"
+    render_file "$file"
   done < <(find "$target/.claude" "$target/.ai" "$target/CLAUDE.md" -type f -print0)
+
+  write_manifest "$target"
 
   echo
   echo "Done. The AI Engineering Team is installed in $target"
@@ -115,12 +182,77 @@ cmd_init() {
   echo "  • Brain:      .ai/organization/  (fill in the TODOs to onboard the team)"
   echo "  • Playbooks:  .ai/playbooks/"
   echo "  • Memory:     .ai/memory/INDEX.md"
+  echo "  • Manifest:   $MANIFEST_REL  (lets \`ait update\` refresh you later)"
+}
+
+cmd_update() {
+  local target; target="$(resolve_target "${1:-.}")"
+  require_template
+
+  if [ ! -f "$target/$MANIFEST_REL" ]; then
+    echo "ait: no install manifest at $target/$MANIFEST_REL" >&2
+    echo "ait: this doesn't look like an ait install. Run \`ait init\` first." >&2
+    exit 1
+  fi
+
+  # Load saved answers from the manifest.
+  # shellcheck disable=SC1090
+  source "$target/$MANIFEST_REL"
+  PROJECT_NAME="$AIT_PROJECT_NAME"
+  PROJECT_DESCRIPTION="$AIT_PROJECT_DESCRIPTION"
+  PRIMARY_LANGUAGE="$AIT_PRIMARY_LANGUAGE"
+  FRAMEWORK="$AIT_FRAMEWORK"
+  DATABASE="$AIT_DATABASE"
+  FRONTEND="$AIT_FRONTEND"
+  TEST_COMMAND="$AIT_TEST_COMMAND"
+  TODAY="$(date +%Y-%m-%d)"
+
+  echo "Updating AI Engineering Team in: $target"
+  echo "  project: $PROJECT_NAME  ·  was version: ${AIT_FRAMEWORK_VERSION:-unknown}  ·  now: $(framework_version)"
+  echo "  preserving your .ai/organization/ and .ai/memory/ (and anything you added)."
+  echo
+
+  local backup_dir="$target/.ai/.ait-backups/$(date +%Y%m%d-%H%M%S)"
+  local refreshed=0 added=0 backed_up=0 tfile rel dest
+
+  while IFS= read -r -d '' tfile; do
+    rel="${tfile#"$TEMPLATE_DIR"/}"
+    is_project_owned "$rel" && continue   # never touch the brain or memory
+
+    dest="$target/$rel"
+    mkdir -p "$(dirname "$dest")"
+
+    if [ -f "$dest" ]; then
+      mkdir -p "$(dirname "$backup_dir/$rel")"
+      cp "$dest" "$backup_dir/$rel"
+      backed_up=$((backed_up + 1))
+      refreshed=$((refreshed + 1))
+      echo "  ~ refreshed  $rel"
+    else
+      added=$((added + 1))
+      echo "  + added      $rel"
+    fi
+
+    cp "$tfile" "$dest"
+    render_file "$dest"
+  done < <(find "$TEMPLATE_DIR" -type f -print0)
+
+  write_manifest "$target"
+
+  echo
+  echo "Update complete: $refreshed refreshed, $added added."
+  if [ "$backed_up" -gt 0 ]; then
+    echo "Backups of overwritten files: ${backup_dir#"$target"/}"
+    echo "Review changes with: git -C \"$target\" diff"
+  fi
+  echo "Untouched (yours): .ai/organization/, .ai/memory/, and any files you added."
 }
 
 main() {
   local subcmd="${1:-help}"
   case "$subcmd" in
-    init) shift; cmd_init "${1:-.}" ;;
+    init)   shift || true; cmd_init   "${1:-.}" ;;
+    update) shift || true; cmd_update "${1:-.}" ;;
     help|-h|--help) usage ;;
     *) echo "ait: unknown command '$subcmd'" >&2; echo >&2; usage; exit 1 ;;
   esac
