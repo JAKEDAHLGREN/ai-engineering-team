@@ -15,9 +15,17 @@
    surfaces an open question that's genuinely the user's call, the Conductor asks
    the user before proceeding.
 
-2. **Build** → dispatch `rails-engineer` for each backend work item.
-   The engineer runs the `add-feature` skill against the plan and the coding
-   standards. Independent items may be dispatched in parallel; dependent items wait.
+2. **Build** → dispatch the engineer who owns each work item, running the
+   `add-feature` skill against the plan and the coding standards:
+   - `rails-engineer` — backend: models, controllers, services, jobs, business logic.
+   - `frontend-engineer` — UI: views, components, styling, interactivity, a11y.
+   - `database-engineer` — non-trivial migrations, indexes, and constraints; and
+     **reviews any schema change** another engineer produces before it ships.
+
+   Dispatch independent work items in parallel (e.g. backend and UI often proceed
+   together once the data contract is set); dependent items wait on their blockers.
+   A work item that touches the schema is not complete until `database-engineer`
+   has reviewed the migration.
    Output: implemented changes, "ready for QA," with files and risks reported.
 
 3. **Verify** → dispatch `qa-engineer`.

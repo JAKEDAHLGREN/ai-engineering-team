@@ -84,8 +84,8 @@ git add CLAUDE.md .claude .ai && git commit -m "Add AI Engineering Team"
 
 **6. Use it.** Open the project in Claude Code and just ask for a feature — e.g.
 *"Add CSV export to the invoices page."* The Conductor (`CLAUDE.md`) plans it,
-dispatches the Tech Lead, Rails Engineer, and QA Engineer, and won't call it done
-until the test suite is green.
+dispatches the right specialists (Rails, Frontend, Database) in parallel, and won't
+call it done until the QA Engineer reports the test suite green.
 
 > **Tip:** put `ait` on your `PATH` to skip the long path —
 > `ln -s ~/tools/ai-engineering-team/bin/ait /usr/local/bin/ait`, then just
@@ -125,6 +125,8 @@ your-project/
 │   ├── agents/
 │   │   ├── tech-lead.md          # plans work, sets acceptance criteria
 │   │   ├── rails-engineer.md     # implements backend code
+│   │   ├── frontend-engineer.md  # UI, styling, interactivity, accessibility
+│   │   ├── database-engineer.md  # schema, migrations, indexes, integrity
 │   │   └── qa-engineer.md        # runs tests, owns the objective done-signal
 │   └── skills/
 │       ├── add-feature/SKILL.md
@@ -143,9 +145,9 @@ your-project/
 
 ---
 
-## The v1 workflow: `feature_request`
+## The core workflow: `feature_request`
 
-The one thing that runs end to end today, proving the wiring before the team scales:
+The workflow that runs end to end, proving the wiring as the team scales:
 
 ```
 User request
@@ -154,7 +156,9 @@ Conductor (CLAUDE.md)  ── loads the brain, picks the playbook
    ↓
 tech-lead          ── plan: work items, owners, acceptance criteria
    ↓
-rails-engineer     ── builds the work items (add-feature skill)
+rails-engineer  ┐
+frontend-engineer ├─ build the work items in parallel (add-feature skill);
+database-engineer ┘  database-engineer also reviews any schema change
    ↓
 qa-engineer        ── runs the suite (run-tests skill) → PASS / FAIL
    ↓
