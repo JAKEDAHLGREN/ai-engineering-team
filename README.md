@@ -223,3 +223,16 @@ grown one proven slice at a time.
 New agents, skills, and playbooks should have a single well-defined responsibility,
 reuse the shared organizational knowledge, minimize overlap, and integrate through
 the Conductor rather than coordinating with each other directly.
+
+**CI.** Every PR runs `test/ait-smoke.sh` via GitHub Actions — it does real
+greenfield and brownfield installs against temp dirs and asserts the invariants
+(agent/skill/playbook counts, no leftover placeholders, frontmatter names matching
+filenames, conductor-block idempotency on update, project-owned files preserved,
+and the gitignore warning). Run it locally before pushing:
+
+```bash
+bash test/ait-smoke.sh
+```
+
+To block merges on failure, make the **`ait smoke test`** check required in the
+repo's branch-protection rule for `main`.

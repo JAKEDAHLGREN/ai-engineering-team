@@ -1,0 +1,30 @@
+name: CI
+
+# Runs on every PR and on pushes to main. The smoke test is the merge gate:
+# make it a required check in branch protection to block merges on red.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ait:
+    name: ait smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Advisory lint — surfaces shellcheck findings in the log without blocking.
+      # Flip continue-on-error to false to make style a hard gate once it's clean.
+      - name: Lint (shellcheck, advisory)
+        continue-on-error: true
+        run: shellcheck bin/ait test/ait-smoke.sh
+
+      - name: Syntax check
+        run: bash -n bin/ait
+
+      - name: Smoke test
+        run: bash test/ait-smoke.sh
