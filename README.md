@@ -136,18 +136,21 @@ your-project/
 │       ├── add-feature/SKILL.md
 │       ├── run-tests/SKILL.md
 │       ├── security-review/SKILL.md
-│       └── optimize-query/SKILL.md
+│       ├── optimize-query/SKILL.md
+│       └── deploy/SKILL.md
 └── .ai/
     ├── organization/             # the shared brain every agent loads first
     │   ├── organization.md  architecture.md  coding_standards.md
     │   ├── roadmap.md  decision_log.md  glossary.md
     ├── playbooks/
     │   ├── feature_request.md    # build a feature end-to-end
-    │   └── production_incident.md # stabilize, diagnose, fix, postmortem
+    │   ├── production_incident.md # stabilize, diagnose, fix, postmortem
+    │   └── release.md            # verify, document, deploy, confirm, record
     └── memory/
         ├── INDEX.md              # read first; the retrieval entrypoint
         ├── decisions/
-        └── technical_debt/
+        ├── technical_debt/
+        └── releases/
 ```
 
 ---
@@ -193,13 +196,13 @@ criteria.
 
 **Shipped:** the full nine-role roster (Tech Lead, Rails, Frontend, Database,
 Security, Performance, DevOps, Documentation, QA); the `add-feature`, `run-tests`,
-`security-review`, and `optimize-query` skills; and the `feature_request` and
-`production_incident` playbooks.
+`security-review`, `optimize-query`, and `deploy` skills; and the `feature_request`,
+`production_incident`, and `release` playbooks.
 
 **Planned, not yet shipped:**
 
-- More skills and playbooks (e.g. `deploy`, `review-pr`, `write-migration`, and a
-  `release` playbook to round out coordination scenarios).
+- More skills (e.g. `review-pr`, `write-migration`) to give the remaining agents
+  concrete reusable procedures.
 - **Event-driven triggers** (PR opened → review, CI failure → QA, etc.). These
   require GitHub Actions / webhook infrastructure and are real work, not markdown —
   the natural next step now that the roster is complete.

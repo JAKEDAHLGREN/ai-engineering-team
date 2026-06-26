@@ -15,6 +15,7 @@
 ## Scopes
 - `decisions/` — architectural and design decisions and their rationale.
 - `technical_debt/` — known shortcuts, their cost, and where to pay them down.
+- `releases/` — dated release notes: version, contents, and deploy outcome.
 
 ## Entries
 _Newest first._
