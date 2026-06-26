@@ -1,361 +1,186 @@
 # AI Engineering Team
 
-> Build your own AI software engineering organization.
+> Build your own AI software engineering organization — and actually run it.
 
-AI Engineering Team is a modular framework for creating a collaborative team of specialized AI software engineers that work together to plan, build, test, deploy, monitor, and maintain production applications.
+A modular framework for a collaborative team of specialized AI software engineers,
+coordinated by a central **Conductor**, that plan, build, and verify changes
+together. It runs on **Claude Code's native primitives** (subagents, skills, and
+`CLAUDE.md`) so there's no custom orchestrator to operate — and it installs into any
+project with a single command.
 
-Rather than relying on a single general-purpose coding assistant, this framework organizes AI into specialized engineering roles coordinated by a central Conductor. Each agent has a well-defined area of expertise while sharing the same organizational knowledge, coding standards, architecture, and project memory.
-
-The goal is to replicate the structure and workflow of a high-performing software engineering organization.
-
----
-
-# Philosophy
-
-Large software projects eventually outgrow a single engineer.
-
-The same is becoming true for AI.
-
-Instead of asking one AI assistant to do everything, this framework distributes work across specialists who collaborate through shared context and coordinated workflows.
-
-The framework is built around five core principles:
-
-- Specialization — Every agent has one primary responsibility.
-- Shared Context — Every agent understands the same architecture and engineering standards.
-- Orchestration — A Conductor coordinates work rather than writing code.
-- Reusable Skills — Engineering workflows are reusable across multiple agents.
-- Persistent Memory — Important architectural decisions, bugs, and project history are retained.
+Rather than one general-purpose assistant doing everything, work is distributed
+across specialists who share the same organizational knowledge, coding standards,
+and project memory.
 
 ---
 
-# Architecture
+## How it actually works
 
-                    User                       │                       ▼                  Conductor                       │       ┌───────────────┼───────────────┐       │               │               │  Tech Lead       Rails Engineer   Frontend Engineer       │               │               │       ├───────────────┼───────────────┤       │               │               │  Database      Performance      Security       │               │               │       ├───────────────┼───────────────┤       │               │               │    QA Engineer     DevOps      Documentation                       │                       ▼              Production Application
+This is the load-bearing part, so it's stated plainly:
 
-The Conductor plans the work, delegates tasks to specialists, gathers results, resolves conflicts, and determines when work is complete.
+- **The Conductor is the main thread** (`CLAUDE.md`). In Claude Code, only the main
+  thread can spawn subagents, so orchestration lives there. The Conductor plans,
+  dispatches, integrates results, judges done-ness, and records memory. **It does
+  not write application code.**
+- **Agents are real Claude Code subagents** (`.claude/agents/*.md`). They define
+  *who* does the work and are dispatched via the Task tool.
+- **Skills are real Claude Code skills** (`.claude/skills/*/SKILL.md`). They define
+  *how* a piece of work is done, and any agent can run one.
+- **Playbooks** (`.ai/playbooks/*.md`) define *the ordered sequence* of skills
+  across agents for a recurring situation.
+- **The shared brain and memory** live in `.ai/` and are *referenced* by the
+  Conductor and agents — there is no parallel agent tree that nothing reads.
 
-Individual agents focus only on their area of expertise.
-
----
-
-# Repository Structure
-
-.ai/ │ ├── organization/ │   ├── organization.md │   ├── architecture.md │   ├── coding_standards.md │   ├── roadmap.md │   ├── decision_log.md │   └── glossary.md │ ├── agents/ │   ├── tech_lead/ │   ├── rails/ │   ├── frontend/ │   ├── database/ │   ├── qa/ │   ├── security/ │   ├── performance/ │   ├── devops/ │   └── documentation/ │ ├── skills/ │ ├── playbooks/ │ ├── memory/ │ └── conductor/
-
----
-
-# Organizational Knowledge
-
-Every engineer in an organization shares the same understanding of how software is built.
-
-The organization/ directory contains that shared knowledge.
-
-Examples include:
-
-- Coding standards
-- Architectural decisions
-- Technology stack
-- Deployment strategy
-- Naming conventions
-- Testing philosophy
-- Security standards
-- Performance goals
-- Roadmap
-- Technical glossary
-
-Every agent loads this information before beginning work.
+The boundary, in one line: **agents = who, skills = how, playbooks = the sequence.**
 
 ---
 
-# Agents
+## Quick start — add the team to any project
 
-Agents represent engineering roles.
+The framework lives in its own repo and installs into your project with one
+command. You only clone this repo once; from then on you can `ait init` it into as
+many projects as you like.
 
-Each agent owns a specific domain.
+**1. Clone this repo** (somewhere outside your project — it's a reusable tool):
 
-Examples include:
+```bash
+git clone https://github.com/JAKEDAHLGREN/ai-engineering-team.git ~/tools/ai-engineering-team
+```
 
-## Tech Lead
+**2. Run the scaffolder, pointing it at your project:**
 
-Responsible for:
+```bash
+~/tools/ai-engineering-team/bin/ait init /path/to/your/project
+```
 
-- Breaking features into work items
-- Planning implementation
-- Reviewing architecture
-- Assigning tasks
-- Coordinating engineers
+**3. Answer the prompts.** It asks for your project name, stack, and test command,
+then fills those into the agent and organization files. Press Enter to accept a
+default (defaults are Ruby / Rails / PostgreSQL / `bin/rails test`).
 
----
+```
+Project name [your-project]:
+One-line description [A software project.]:
+Primary language [Ruby]:
+Framework [Rails]:
+Database [PostgreSQL]:
+Frontend [Hotwire/Stimulus + TailwindCSS]:
+Test command [bin/rails test]:
+```
 
-## Rails Engineer
+That creates `CLAUDE.md`, `.claude/`, and `.ai/` in your project. (It refuses to
+overwrite an existing install — remove those first to reinstall.)
 
-Responsible for:
+**4. Onboard the team to your codebase.** Open `.ai/organization/` and fill in the
+`TODO`s — at minimum `architecture.md` and any project-specific rules in
+`coding_standards.md`. This is the shared context every agent loads before working;
+the better it is, the better the team performs.
 
-- Models
-- Controllers
-- Services
-- Jobs
-- Mailers
-- Business logic
-- Refactoring
-- Rails conventions
+**5. Commit the team into your project** so it's versioned alongside your code:
 
----
+```bash
+cd /path/to/your/project
+git add CLAUDE.md .claude .ai && git commit -m "Add AI Engineering Team"
+```
 
-## Frontend Engineer
+**6. Use it.** Open the project in Claude Code and just ask for a feature — e.g.
+*"Add CSV export to the invoices page."* The Conductor (`CLAUDE.md`) plans it,
+dispatches the Tech Lead, Rails Engineer, and QA Engineer, and won't call it done
+until the test suite is green.
 
-Responsible for:
+> **Tip:** put `ait` on your `PATH` to skip the long path —
+> `ln -s ~/tools/ai-engineering-team/bin/ait /usr/local/bin/ait`, then just
+> `ait init /path/to/your/project`.
 
-- UI
-- TailwindCSS
-- Hotwire
-- Stimulus
-- Accessibility
-- Responsive layouts
-- User experience
-
----
-
-## Database Engineer
-
-Responsible for:
-
-- PostgreSQL
-- Migrations
-- Query optimization
-- Indexes
-- Constraints
-- Data integrity
-
----
-
-## QA Engineer
-
-Responsible for:
-
-- Unit tests
-- Integration tests
-- System tests
-- Regression testing
-- Smoke testing
-- Bug verification
+### Updating an installed project later
+Pull this repo for the newest agents/skills, then re-run `ait init` into a fresh
+temporary dir and copy over the pieces you want — or, since the team files are
+committed in your project, just edit them in place. The framework is plain markdown
+and one bash script; there's nothing to "upgrade" beyond the files themselves.
 
 ---
 
-## Security Engineer
+## What gets installed
 
-Responsible for:
-
-- Authentication
-- Authorization
-- Secret management
-- Dependency auditing
-- OWASP compliance
-- Security reviews
-
----
-
-## Performance Engineer
-
-Responsible for:
-
-- N+1 detection
-- Query optimization
-- Caching
-- Memory usage
-- Profiling
-- Benchmarking
-
----
-
-## DevOps Engineer
-
-Responsible for:
-
-- Infrastructure
-- CI/CD
-- Docker
-- Deployments
-- Monitoring
-- Rollbacks
-- Observability
+```
+your-project/
+├── CLAUDE.md                     # the Conductor (main-thread orchestrator)
+├── .claude/
+│   ├── agents/
+│   │   ├── tech-lead.md          # plans work, sets acceptance criteria
+│   │   ├── rails-engineer.md     # implements backend code
+│   │   └── qa-engineer.md        # runs tests, owns the objective done-signal
+│   └── skills/
+│       ├── add-feature/SKILL.md
+│       └── run-tests/SKILL.md
+└── .ai/
+    ├── organization/             # the shared brain every agent loads first
+    │   ├── organization.md  architecture.md  coding_standards.md
+    │   ├── roadmap.md  decision_log.md  glossary.md
+    ├── playbooks/
+    │   └── feature_request.md    # the end-to-end workflow
+    └── memory/
+        ├── INDEX.md              # read first; the retrieval entrypoint
+        ├── decisions/
+        └── technical_debt/
+```
 
 ---
 
-## Documentation Engineer
+## The v1 workflow: `feature_request`
 
-Responsible for:
+The one thing that runs end to end today, proving the wiring before the team scales:
 
-- API documentation
-- ADRs
-- READMEs
-- Developer guides
-- Release notes
+```
+User request
+   ↓
+Conductor (CLAUDE.md)  ── loads the brain, picks the playbook
+   ↓
+tech-lead          ── plan: work items, owners, acceptance criteria
+   ↓
+rails-engineer     ── builds the work items (add-feature skill)
+   ↓
+qa-engineer        ── runs the suite (run-tests skill) → PASS / FAIL
+   ↓
+Conductor          ── FAIL: send back · PASS: done, record to memory
+```
 
----
-
-# Skills
-
-Skills are reusable engineering workflows.
-
-Unlike agents, skills are not identities.
-
-A Rails Engineer and QA Engineer can both execute the same skill.
-
-Examples:
-
-- Investigate Bug
-- Review Pull Request
-- Add Feature
-- Run Test Suite
-- Optimize Query
-- Write Migration
-- Deploy Release
-- Security Audit
-
-Skills define how work is performed.
-
-Agents define who performs it.
+**"Done" is objective, not vibes.** Code work is not complete until the QA Engineer
+has run the test suite and reported it green against the Tech Lead's acceptance
+criteria.
 
 ---
 
-# Playbooks
+## Design principles
 
-Playbooks coordinate multiple agents.
-
-A playbook defines the order of execution for larger engineering processes.
-
-Example:
-
-## Production Incident
-
-1. Conductor receives alert
-2. Performance Engineer investigates
-3. Rails Engineer identifies root cause
-4. QA reproduces issue
-5. Security validates impact
-6. DevOps deploys fix
-7. Monitoring confirms resolution
-
-Playbooks transform individual skills into repeatable organizational processes.
+- **Specialization** — every agent has one responsibility and stays in it.
+- **Shared context** — every agent loads `.ai/organization/` before acting.
+- **Orchestration** — the Conductor coordinates; it doesn't do specialist work.
+- **Reusable skills** — procedures are decoupled from identities.
+- **Persistent memory** — decisions, bugs, and debt are recorded and indexed, and
+  read via `memory/INDEX.md` so context never balloons.
 
 ---
 
-# Memory
+## Roadmap (not yet built)
 
-Engineering teams become stronger because they remember previous work.
+v1 is deliberately one vertical slice. Planned, explicitly *not* shipped yet:
 
-The memory/ directory stores long-term knowledge.
+- The remaining specialists: frontend, database, security, performance, devops,
+  documentation.
+- More skills and playbooks (review PR, optimize query, deploy, incident response,
+  write migration, security review, release, dependency upgrade).
+- **Event-driven triggers** (PR opened → review, CI failure → QA, etc.). These
+  require GitHub Actions / webhook infrastructure and are real work, not markdown —
+  added after the core loop is proven.
+- Stack-agnostic agent templates beyond the current Rails-first defaults.
 
-Examples:
-
-- Architecture decisions
-- Previous incidents
-- Technical debt
-- Bug history
-- Release notes
-- Lessons learned
-- Known limitations
-
-Memory prevents repeated mistakes and preserves institutional knowledge.
+The objective isn't more agents — it's a more capable engineering organization,
+grown one proven slice at a time.
 
 ---
 
-# The Conductor
+## Contributing
 
-The Conductor is the orchestrator.
-
-It does not replace specialist engineers.
-
-Instead, it:
-
-- Understands the request
-- Builds an execution plan
-- Identifies dependencies
-- Assigns work
-- Executes parallel tasks
-- Collects results
-- Resolves conflicts
-- Determines completion
-
-Think of the Conductor as an Engineering Manager rather than a Staff Engineer.
-
----
-
-# Example Workflow
-
-Feature Request
-
-User  ↓  Conductor  ↓  Tech Lead creates implementation plan  ↓  Rails Engineer builds backend  ↓  Frontend Engineer implements UI  ↓  Database Engineer reviews migrations  ↓  QA generates regression tests  ↓  Security reviews changes  ↓  Documentation updates guides  ↓  DevOps deploys  ↓  Monitoring validates production
-
-Each engineer focuses on one responsibility while the Conductor maintains coordination.
-
----
-
-# Event-Driven Automation
-
-The framework supports event-based execution.
-
-Examples include:
-
-| Event | Triggered Agent |
-|--------|-----------------|
-| Pull Request Opened | Code Reviewer |
-| CI Failure | QA |
-| Slow Query Detected | Performance |
-| Security Advisory | Security |
-| Sentry Error | Incident Response |
-| Deployment Complete | Smoke Tests |
-| Failed Health Check | DevOps |
-| Database Migration | Database Engineer |
-
-This allows the organization to proactively respond to changes rather than waiting for manual instructions.
-
----
-
-# Goals
-
-- Build software faster through specialization.
-- Improve code quality through dedicated reviewers.
-- Reduce regressions with automated QA.
-- Preserve architectural consistency.
-- Maintain production readiness.
-- Scale engineering processes without increasing cognitive load.
-- Create reusable engineering workflows across projects.
-
----
-
-# Long-Term Vision
-
-This repository is intended to become an extensible AI operating system for software engineering.
-
-Future capabilities may include:
-
-- Multi-model orchestration
-- Long-term vector memory
-- Automatic project onboarding
-- Continuous production monitoring
-- Autonomous bug triage
-- Intelligent pull request reviews
-- Infrastructure optimization
-- Cost optimization
-- Release planning
-- Self-improving engineering workflows
-
-As AI capabilities evolve, the framework can expand by introducing new agents, skills, and playbooks without changing its underlying architecture.
-
----
-
-# Contributing
-
-The framework is intentionally modular.
-
-New agents, skills, and playbooks should:
-
-- Have a single, well-defined responsibility.
-- Reuse existing organizational knowledge.
-- Minimize overlap with other agents.
-- Follow shared engineering standards.
-- Integrate through the Conductor rather than directly coordinating with every other component.
-
-The objective is not to create more agents—it is to create a more capable engineering organization.
+New agents, skills, and playbooks should have a single well-defined responsibility,
+reuse the shared organizational knowledge, minimize overlap, and integrate through
+the Conductor rather than coordinating with each other directly.
