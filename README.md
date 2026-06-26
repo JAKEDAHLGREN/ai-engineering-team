@@ -86,6 +86,13 @@ cd /path/to/your/project
 git add CLAUDE.md .claude .ai && git commit -m "Add AI Engineering Team"
 ```
 
+> **`.gitignore` gotcha:** if your repo ignores `.claude/` (a common rule like
+> `.claude/*`), the agents won't be committed — so Claude Code on the web and fresh
+> clones won't see them, and the team will be incomplete. `ait init` detects this
+> and prints the exact fix: add a negation such as `!.claude/agents/` after the
+> ignoring rule, then `git add .claude/agents`. Verify with
+> `git ls-files .claude/agents | wc -l` (expect 9).
+
 **6. Use it.** Open the project in Claude Code and just ask for a feature — e.g.
 *"Add CSV export to the invoices page."* The Conductor (`CLAUDE.md`) plans it,
 dispatches the right specialists (Rails, Frontend, Database) in parallel, and won't
