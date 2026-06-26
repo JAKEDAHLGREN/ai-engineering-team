@@ -92,10 +92,27 @@ until the test suite is green.
 > `ait init /path/to/your/project`.
 
 ### Updating an installed project later
-Pull this repo for the newest agents/skills, then re-run `ait init` into a fresh
-temporary dir and copy over the pieces you want — or, since the team files are
-committed in your project, just edit them in place. The framework is plain markdown
-and one bash script; there's nothing to "upgrade" beyond the files themselves.
+
+Installs are a **snapshot** — they don't auto-sync. When the framework improves,
+pull this repo and run `ait update` inside your project to adopt the changes:
+
+```bash
+cd ~/tools/ai-engineering-team && git pull        # get the latest framework
+~/tools/ai-engineering-team/bin/ait update /path/to/your/project
+```
+
+`ait update` refreshes **only the framework-owned files** — the Conductor, agents,
+skills, and shipped playbooks — re-rendered with the answers you gave at install
+(saved in `.ai/.ait-manifest`). It explicitly **never touches** your project-owned
+knowledge:
+
+- `.ai/organization/` — your architecture, standards, and decisions
+- `.ai/memory/` — your recorded decisions, debt, and history
+- any agents, skills, or playbooks **you** added
+
+Overwritten files are backed up to `.ai/.ait-backups/<timestamp>/` first, and since
+the team is committed in your project, `git diff` shows exactly what changed before
+you commit it. Nothing you wrote is ever silently lost.
 
 ---
 
