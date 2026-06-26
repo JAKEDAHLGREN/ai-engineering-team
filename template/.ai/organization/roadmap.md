@@ -15,6 +15,6 @@ _TODO: known-wanted but not yet scheduled._
 The AI engineering team itself grows here. The Conductor coordinates the full
 roster — Tech Lead, {{FRAMEWORK}} Engineer, Frontend, Database, Security,
 Performance, DevOps, Documentation, and QA Engineers — exercised by the
-`feature_request` and `production_incident` playbooks. Planned additions: more
-skills and playbooks (e.g. `release`); and event-driven triggers (PR opened, CI
-failure, etc.) now that the roster is complete.
+`feature_request`, `production_incident`, and `release` playbooks. Planned
+additions: more skills (e.g. `review-pr`, `write-migration`); and event-driven
+triggers (PR opened, CI failure, etc.) now that the roster is complete.
