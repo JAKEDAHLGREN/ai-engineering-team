@@ -27,6 +27,35 @@ answers() { printf '\n\n\n\n\n\n\n'; }
 echo "== syntax =="
 bash -n "$AIT" && pass "bin/ait parses"
 
+echo "== roster consistency =="
+# The agent files are the single source of truth. Every agent must appear in the
+# Conductor's dispatch table, the organization.md team table, and the README tree
+# — and every agent named in those tables must have a file. Stale-roster bugs
+# have shipped twice; this check makes the drift impossible to merge.
+for f in "$REPO_ROOT"/template/.claude/agents/*.md; do
+  a=$(basename "$f" .md)
+  grep -q "\`$a\`" "$REPO_ROOT/template/CLAUDE.md" \
+    || fail "agent '$a' missing from template/CLAUDE.md dispatch table"
+  grep -q "\`$a\`" "$REPO_ROOT/template/.ai/organization/organization.md" \
+    || fail "agent '$a' missing from organization.md team table"
+  grep -q "$a\.md" "$REPO_ROOT/README.md" \
+    || fail "agent '$a' missing from README tree"
+done
+for src in "$REPO_ROOT/template/CLAUDE.md" "$REPO_ROOT/template/.ai/organization/organization.md"; do
+  while IFS= read -r nm; do
+    printf '%s' "$nm" | grep -Eq '^[a-z][a-z0-9-]*$' || continue
+    [ -f "$REPO_ROOT/template/.claude/agents/$nm.md" ] \
+      || fail "'$nm' listed in ${src##*/} but no agent file exists"
+  done < <(awk -F'|' 'NF>=4 && $3 ~ /`/ { gsub(/[` ]/, "", $3); print $3 }' "$src")
+done
+pass "roster: agent files, CLAUDE.md, organization.md, and README agree"
+
+for f in "$REPO_ROOT"/template/.ai/playbooks/*.md; do
+  p=$(basename "$f")
+  grep -q "$p" "$REPO_ROOT/README.md" || fail "playbook '$p' missing from README tree"
+done
+pass "playbooks all listed in README"
+
 echo "== case: greenfield install =="
 G="$WORK/green"; mkdir -p "$G"
 answers | "$AIT" init "$G" >/dev/null
@@ -59,6 +88,39 @@ pass "skill frontmatter names match directories"
 [ "$(grep -cF 'ai-engineering-team:start' "$G/CLAUDE.md")" = "1" ] \
   || fail "greenfield CLAUDE.md should have exactly one conductor block"
 pass "greenfield CLAUDE.md has one conductor block"
+
+echo "== case: artifact checker =="
+[ -f "$G/.ai/bin/check.sh" ] || fail "check.sh not installed"
+mkdir -p "$G/.ai/work/001-fix" "$G/.ai/memory/runs"
+cat > "$G/.ai/work/001-fix/verdict-qa.r1.md" <<'FIX'
+# Verdict — 001-fix · qa-engineer · round 1
+**Verdict:** PASS
+## Findings
+- [MISSING_TEST] app/models/x.rb:10 — example
+FIX
+cat > "$G/.ai/memory/runs/2026-07-14-001-fix.md" <<'FIX'
+# Run — 001-fix
+**Final verdict:** PASS
+## Findings (all rounds)
+- [MISSING_TEST] r1 · app/models/x.rb:10 — example
+## Consequential decisions
+None.
+## Struggles & assumptions
+None.
+## Escalations
+None.
+FIX
+(cd "$G" && bash .ai/bin/check.sh >/dev/null) || fail "checker rejected valid artifacts"
+pass "checker accepts valid artifacts"
+
+printf -- '- [NOT_A_REAL_TAG] r1 · x — bad\n' >> "$G/.ai/work/001-fix/verdict-qa.r1.md"
+(cd "$G" && bash .ai/bin/check.sh >/dev/null 2>&1) && fail "checker passed an unknown tag" \
+  || pass "checker catches an unknown tag"
+
+sed -i.bak '/^## Escalations/d' "$G/.ai/memory/runs/2026-07-14-001-fix.md"
+(cd "$G" && bash .ai/bin/check.sh >/dev/null 2>&1) && fail "checker passed a run record missing a section" \
+  || pass "checker catches a missing run-record section"
+rm -rf "$G/.ai/work/001-fix" "$G/.ai/memory/runs/2026-07-14-001-fix.md" "$G/.ai/memory/runs/2026-07-14-001-fix.md.bak"
 
 echo "== case: brownfield install preserves existing files =="
 B="$WORK/brown"; mkdir -p "$B/.claude/agents"
