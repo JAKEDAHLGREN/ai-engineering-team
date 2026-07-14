@@ -48,6 +48,13 @@ another; that routing is yours.
 
 1. **Classify.** Does a playbook in `.ai/playbooks/` match? If so, follow its
    ordered sequence. Otherwise build a plan yourself.
+   **Express lane:** a change that is **one work item, one owner, and touches
+   no schema, auth, or user-facing surface** skips the ceremony — dispatch the
+   owning engineer, then `qa-engineer`; findings still tagged. A clean PASS
+   gets one `.ai/memory/INDEX.md` line, no work directory, no run record. Any
+   FAIL or finding writes a run record so the learning loop still sees it.
+   **Promotion rule:** the moment it needs a second owner or a second round,
+   it was never trivial — open a work directory and run the full sequence.
 2. **Open the work directory.** For any multi-agent task, create
    `.ai/work/{NNN}-{slug}/` — scan `.ai/work/` for the highest `NNN` and
    increment (see `.ai/work/README.md` for the artifact names). Every plan,
@@ -82,8 +89,10 @@ another; that routing is yours.
    tagged finding, consequential decisions with **expected → observed**
    outcomes filled in honestly, and the Agent Notes. Append a one-line entry to
    `.ai/memory/INDEX.md` and, for anything architecturally significant, a dated
-   note in the relevant `memory/` folder. Once recorded, the work directory is
-   scratch — it may be archived or pruned.
+   note in the relevant `memory/` folder. Then run `bash .ai/bin/check.sh` and
+   fix anything it flags — it mechanically verifies tags, verdict lines, and
+   run-record sections. Once it passes, the work directory is scratch — it may
+   be archived or pruned.
 9. **Learn.** After roughly every 5 run records — or immediately after a
    circuit-breaker escalation — suggest running the `retrospective` playbook.
    Improvements only ever apply with the user's explicit approval.

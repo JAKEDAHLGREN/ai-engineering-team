@@ -5,6 +5,12 @@
 
 **Trigger:** a user requests new behavior or a change to existing behavior.
 
+**Express lane:** a trivial fix — **one work item, one owner, no schema, auth,
+or user-facing surface change** — skips this playbook: dispatch the owning
+engineer, then `qa-engineer`, findings tagged as usual. Clean PASS → one INDEX
+line, nothing else. Any FAIL, any finding, a second owner, or a second round →
+it was never trivial: open the work directory and run the full sequence below.
+
 **Owner:** the Conductor (`CLAUDE.md`) drives every step; specialists execute.
 
 **Artifacts:** every output below is a file in `.ai/work/{NNN}-{slug}/` (see
