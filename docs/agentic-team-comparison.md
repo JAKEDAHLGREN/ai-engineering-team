@@ -87,6 +87,11 @@ Don't lose these while borrowing from Robert:
 
 ## 4. Recommendations for `ai-engineering-team`
 
+> **Note (2026-07-14):** the recommendations below have since been implemented —
+> see the status note at the end of §5. They're kept as originally written, so
+> present-tense statements about the repo's defaults (all-opus agents, repeated
+> boilerplate, no work directory) describe the *pre-implementation* state.
+
 Ordered by impact. Items 1–3 address your two stated goals directly (self-learning, token burn).
 
 ### 4.1 Build the learning loop (the big one)
@@ -148,6 +153,20 @@ Apply Robert's test to your five skills: *"What would an agent have to guess fro
 | 3 (1–2 days) | 4.2.4 file-based handoffs + 4.5 structured verdicts + Agent Notes | Creates the persistent substrate; resumability falls out |
 | 4 (2–3 days) | 4.1 run records + retrospective agent + human-gated skill-builder | The learning loop, built on phases 1–3 |
 | 5 (ongoing) | 4.6/4.7 discovery step, memory consolidation, skill quality bar | Compounding refinement |
+
+> **Implementation status (2026-07-14):** Phases 1–5 implemented. Delivered: finding
+> vocabulary + circuit-breaker + Conductor table fix (P1); opus/sonnet split, reporting
+> protocol dedup, minimal-context dispatch (P2); `.ai/work/` artifact handoffs,
+> structured verdicts, Agent Notes (P3); run records, `team-analyst`, `skill-builder`,
+> `retrospective` playbook (P4); clarify-first step, directions-rejected in plans,
+> `memory_consolidation` playbook, skill quality bar (P5). Roster is now 11 agents,
+> 5 playbooks; smoke test updated and green. One documented deviation from the
+> model-split policy: `team-analyst` runs on opus (three opus agents, not two) —
+> cross-run synthesis is the hardest reasoning task in the framework and it runs
+> only every ~5 features, so the cost impact is negligible; flip its frontmatter
+> to sonnet if preferred. Not done (requires infrastructure, per the original
+> roadmap): event-driven triggers; SQLite port of run records remains optional
+> if grep-based analysis proves limiting.
 
 ---
 

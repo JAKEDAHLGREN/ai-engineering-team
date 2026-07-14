@@ -91,7 +91,7 @@ git add CLAUDE.md .claude .ai && git commit -m "Add AI Engineering Team"
 > clones won't see them, and the team will be incomplete. `ait init` detects this
 > and prints the exact fix: add a negation such as `!.claude/agents/` after the
 > ignoring rule, then `git add .claude/agents`. Verify with
-> `git ls-files .claude/agents | wc -l` (expect 9).
+> `git ls-files .claude/agents | wc -l` (expect 11).
 
 **6. Use it.** Open the project in Claude Code and just ask for a feature — e.g.
 *"Add CSV export to the invoices page."* The Conductor (`CLAUDE.md`) plans it,
@@ -143,7 +143,9 @@ your-project/
 │   │   ├── performance-engineer.md # hot paths, query/index tuning, profiling
 │   │   ├── devops-engineer.md      # CI/CD, deploys, rollbacks, observability
 │   │   ├── documentation-engineer.md # READMEs, API docs, ADRs, release notes
-│   │   └── qa-engineer.md          # runs tests, owns the objective done-signal
+│   │   ├── qa-engineer.md          # runs tests, owns the objective done-signal
+│   │   ├── team-analyst.md         # mines run records; proposes improvements
+│   │   └── skill-builder.md        # applies user-approved proposals
 │   └── skills/
 │       ├── add-feature/SKILL.md
 │       ├── run-tests/SKILL.md
@@ -154,15 +156,22 @@ your-project/
     ├── organization/             # the shared brain every agent loads first
     │   ├── organization.md  architecture.md  coding_standards.md
     │   ├── roadmap.md  decision_log.md  glossary.md
+    │   └── finding_vocabulary.md # controlled tags for review findings
     ├── playbooks/
-    │   ├── feature_request.md    # build a feature end-to-end
+    │   ├── feature_request.md    # clarify, plan, build, verify — end-to-end
     │   ├── production_incident.md # stabilize, diagnose, fix, postmortem
-    │   └── release.md            # verify, document, deploy, confirm, record
+    │   ├── release.md            # verify, document, deploy, confirm, record
+    │   ├── retrospective.md      # run records → proposals → approval → skills
+    │   └── memory_consolidation.md # merge, supersede, prune; keep memory scannable
+    ├── work/                     # in-flight task artifacts: plans, reports, verdicts
+    │   └── README.md             # the artifact naming + verdict format
     └── memory/
         ├── INDEX.md              # read first; the retrieval entrypoint
         ├── decisions/
         ├── technical_debt/
-        └── releases/
+        ├── releases/
+        ├── runs/                 # one structured record per completed task
+        └── proposals/            # analyst proposals + build notes (human-gated)
 ```
 
 ---
@@ -191,6 +200,12 @@ Conductor          ── FAIL: send back · PASS: done, record to memory
 has run the test suite and reported it green against the Tech Lead's acceptance
 criteria.
 
+**Failure loops are capped, not infinite.** Findings are tagged with a controlled
+vocabulary (`.ai/organization/finding_vocabulary.md`). If the same category fails
+two rounds in a row, the Conductor names it explicitly; a third round stops the
+loop and escalates to the user — three identical failures mean the plan or the
+standards are wrong, not the engineer.
+
 ---
 
 ## Design principles
@@ -201,15 +216,25 @@ criteria.
 - **Reusable skills** — procedures are decoupled from identities.
 - **Persistent memory** — decisions, bugs, and debt are recorded and indexed, and
   read via `memory/INDEX.md` so context never balloons.
+- **Artifacts over context** — plans, reports, and verdicts are files in
+  `.ai/work/{NNN}-{slug}/`, so handoffs are paths, retries never re-derive prior
+  work, and an interrupted task resumes at its first missing artifact.
+- **Self-improvement, human-gated** — every task leaves a run record with tagged
+  findings and expected-vs-observed decisions; the Team Analyst mines them for
+  recurring patterns; nothing changes without your explicit approval.
 
 ---
 
 ## Roadmap
 
-**Shipped:** the full nine-role roster (Tech Lead, Rails, Frontend, Database,
-Security, Performance, DevOps, Documentation, QA); the `add-feature`, `run-tests`,
-`security-review`, `optimize-query`, and `deploy` skills; and the `feature_request`,
-`production_incident`, and `release` playbooks.
+**Shipped:** the eleven-role roster (Tech Lead, Rails, Frontend, Database,
+Security, Performance, DevOps, Documentation, QA, plus the Team Analyst and
+Skill Builder learning loop); the `add-feature`, `run-tests`, `security-review`,
+`optimize-query`, and `deploy` skills; the `feature_request` (clarify-first),
+`production_incident`, `release`, `retrospective`, and `memory_consolidation`
+playbooks; file-based handoffs in `.ai/work/`; tagged findings via a controlled
+vocabulary; run records in `.ai/memory/runs/`; and the human-gated
+self-improvement cycle.
 
 **Planned, not yet shipped:**
 
@@ -230,6 +255,12 @@ grown one proven slice at a time.
 New agents, skills, and playbooks should have a single well-defined responsibility,
 reuse the shared organizational knowledge, minimize overlap, and integrate through
 the Conductor rather than coordinating with each other directly.
+
+**The skill quality bar:** a skill must answer "what would an agent have to guess
+from training data if this didn't exist?" If training data would get it right,
+the skill isn't needed — write only settled, project-specific knowledge. The
+`retrospective` playbook generates skills that pass this test by construction,
+because each one exists to prevent a mistake that actually recurred.
 
 **CI.** Every PR runs `test/ait-smoke.sh` via GitHub Actions — it does real
 greenfield and brownfield installs against temp dirs and asserts the invariants

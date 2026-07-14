@@ -27,9 +27,11 @@ access can run it; it does not belong to one identity.
 5. **Self-check.** Confirm the code loads/boots and run any fast, relevant tests
    locally. Fix obvious breakage before handing off.
 
-6. **Hand off to QA.** Report: files changed, what you verified, what remains. State
-   "implemented; ready for QA" — the `run-tests` skill and QA Engineer own the final
-   done-signal.
+6. **Hand off to QA.** Report per the reporting protocol in
+   `.ai/organization/coding_standards.md` — files changed, what you verified,
+   tagged findings, Agent Notes — written to the work directory report path when
+   your dispatch names one. State "implemented; ready for QA" — the `run-tests`
+   skill and QA Engineer own the final done-signal.
 
 ## Done means
 The work item's acceptance criteria are achievable and the change is ready for

@@ -26,7 +26,10 @@ done-signal the Conductor depends on.
 5. **Report a verdict:**
    - **PASS** — full suite green and the change is covered. Quote the summary line.
    - **FAIL** — list what failed with output, and which acceptance criterion it
-     violates.
+     violates. Tag each failure or gap with a category from
+     `.ai/organization/finding_vocabulary.md` (e.g. `[MISSING_TEST]`) — exact
+     strings, one tag per finding, so the Conductor can track recurrence across
+     rounds.
 
 ## Rule
 Never report PASS without having actually run the suite in this session and seen it

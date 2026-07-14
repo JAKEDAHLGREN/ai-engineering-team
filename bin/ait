@@ -24,7 +24,7 @@ TEMPLATE_DIR="$FRAMEWORK_ROOT/template"
 MANIFEST_REL=".ai/.ait-manifest"
 
 # Trees that belong to the project, not the framework. `update` never touches them.
-PROJECT_OWNED=(".ai/organization" ".ai/memory")
+PROJECT_OWNED=(".ai/organization" ".ai/memory" ".ai/work")
 
 # Markers delimiting the managed Conductor block inside the project's CLAUDE.md.
 # These strings are static — do not template them, or block detection breaks.
