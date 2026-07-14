@@ -30,6 +30,12 @@ This is the load-bearing part, so it's stated plainly:
   across agents for a recurring situation.
 - **The shared brain and memory** live in `.ai/` and are *referenced* by the
   Conductor and agents — there is no parallel agent tree that nothing reads.
+- **Work is handed off as files, not pasted context.** Plans, reports, and
+  verdicts live in `.ai/work/{NNN}-{slug}/`; agents pass paths, and interrupted
+  tasks resume from their artifacts.
+- **The team learns, with you as the gate.** Every completed task is distilled
+  into a run record; the `team-analyst` mines them for recurring patterns and
+  the `skill-builder` applies only the proposals you approve.
 
 The boundary, in one line: **agents = who, skills = how, playbooks = the sequence.**
 
@@ -119,7 +125,8 @@ in place between its markers, so the rest of your `CLAUDE.md` is left exactly as
 It explicitly **never touches** your project-owned knowledge:
 
 - `.ai/organization/` — your architecture, standards, and decisions
-- `.ai/memory/` — your recorded decisions, debt, and history
+- `.ai/memory/` — your recorded decisions, debt, run records, and history
+- `.ai/work/` — your in-flight task artifacts
 - any agents, skills, or playbooks **you** added
 
 Overwritten files are backed up to `.ai/.ait-backups/<timestamp>/` first, and since
@@ -183,17 +190,17 @@ The workflow that runs end to end, proving the wiring as the team scales:
 ```
 User request
    ↓
-Conductor (CLAUDE.md)  ── loads the brain, picks the playbook
+Conductor (CLAUDE.md)  ── loads the brain, clarifies if ambiguous, opens .ai/work/
    ↓
-tech-lead          ── plan: work items, owners, acceptance criteria
+tech-lead          ── plan.md: work items, owners, acceptance criteria
    ↓
 rails-engineer  ┐
 frontend-engineer ├─ build the work items in parallel (add-feature skill);
-database-engineer ┘  database-engineer also reviews any schema change
+database-engineer ┘  database-engineer also reviews any schema change (verdict)
    ↓
-qa-engineer        ── runs the suite (run-tests skill) → PASS / FAIL
+qa-engineer        ── runs the suite (run-tests skill) → tagged PASS / FAIL verdict
    ↓
-Conductor          ── FAIL: send back · PASS: done, record to memory
+Conductor          ── FAIL: send back · PASS: done, distill run record to memory
 ```
 
 **"Done" is objective, not vibes.** Code work is not complete until the QA Engineer
@@ -211,7 +218,8 @@ standards are wrong, not the engineer.
 ## Design principles
 
 - **Specialization** — every agent has one responsibility and stays in it.
-- **Shared context** — every agent loads `.ai/organization/` before acting.
+- **Shared context** — every agent loads the `.ai/organization/` knowledge its
+  role needs before acting; no one is asked to carry the whole brain.
 - **Orchestration** — the Conductor coordinates; it doesn't do specialist work.
 - **Reusable skills** — procedures are decoupled from identities.
 - **Persistent memory** — decisions, bugs, and debt are recorded and indexed, and
