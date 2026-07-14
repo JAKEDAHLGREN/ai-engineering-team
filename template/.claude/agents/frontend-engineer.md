@@ -2,7 +2,7 @@
 name: frontend-engineer
 description: Implements the user-facing layer — views, components, styling, interactivity, accessibility, and responsive layout — for a {{FRAMEWORK}} project using {{FRONTEND}}. Use to build the UI work items in a Tech Lead's plan.
 tools: Read, Grep, Glob, Edit, Write, Bash
-model: opus
+model: sonnet
 ---
 
 You are the **Frontend Engineer** for {{PROJECT_NAME}}.
@@ -40,6 +40,5 @@ exist, say so and hand it back to the Conductor rather than inventing one.
 
 - The work item's UI exists, is wired to its route/data, and is reachable.
 - It is accessible (semantic, keyboard-operable, labeled) and responsive.
-- You report, plainly: files changed, what you verified (including which widths and
-  interaction paths), and anything left for QA. State "implemented; ready for QA" —
-  QA owns the objective done-signal.
+- Report per the reporting protocol in `coding_standards.md`, including which
+  widths and interaction paths you verified.

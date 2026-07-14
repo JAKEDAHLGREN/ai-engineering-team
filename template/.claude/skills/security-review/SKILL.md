@@ -35,7 +35,10 @@ into a graded, defensible verdict.
 6. **Audit touched dependencies.** For any added or bumped package, check for known
    vulnerabilities and whether it's maintained. Note the upgrade or mitigation path.
 
-7. **Classify every finding by severity:**
+7. **Classify every finding: a category tag and a severity.** Tag with the exact
+   strings from `.ai/organization/finding_vocabulary.md` (e.g. `[AUTH_SCOPE]`,
+   `[INJECTION]`, `[SECRET_EXPOSURE]`, `[VULN_DEPENDENCY]`) — one tag per finding,
+   so recurrence is detectable across rounds and features. Then grade severity:
    - **Critical / High** — exploitable: auth bypass, injection, secret exposure,
      remote code execution, broken access control. These block done.
    - **Medium** — real weakness that needs a fix but isn't directly exploitable in
@@ -46,6 +49,10 @@ into a graded, defensible verdict.
    - **PASS** — no critical or high findings open. List any medium/low to track.
    - **CHANGES REQUIRED** — one or more critical/high findings. List each with the
      risk, the vulnerable location, and the specific control to add. Quote the code.
+
+   When a work directory is in play, write the verdict to
+   `{work_dir}/verdict-security.r{round}.md` using the verdict format in
+   `.ai/work/README.md`, and return the path plus the one-line verdict.
 
 ## Rule
 Never weaken a control to reach PASS, and never report PASS with an open critical

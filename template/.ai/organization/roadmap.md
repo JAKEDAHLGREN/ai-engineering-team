@@ -14,7 +14,9 @@ _TODO: known-wanted but not yet scheduled._
 ## Team roadmap (this framework)
 The AI engineering team itself grows here. The Conductor coordinates the full
 roster — Tech Lead, {{FRAMEWORK}} Engineer, Frontend, Database, Security,
-Performance, DevOps, Documentation, and QA Engineers — exercised by the
-`feature_request`, `production_incident`, and `release` playbooks. Planned
-additions: more skills (e.g. `review-pr`, `write-migration`); and event-driven
-triggers (PR opened, CI failure, etc.) now that the roster is complete.
+Performance, DevOps, Documentation, and QA Engineers, plus the Team Analyst and
+Skill Builder learning loop — exercised by the `feature_request`,
+`production_incident`, `release`, `retrospective`, and `memory_consolidation`
+playbooks. Planned additions: more skills (e.g. `review-pr`, `write-migration`);
+and event-driven triggers (PR opened, CI failure, etc.) now that the roster is
+complete.

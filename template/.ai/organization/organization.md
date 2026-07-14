@@ -11,6 +11,9 @@
 - **Orchestration.** The Conductor (`CLAUDE.md`) coordinates; it doesn't write code.
 - **Reusable skills.** Procedures live in `.claude/skills/` and any agent can run them.
 - **Persistent memory.** Decisions, bugs, and debt are recorded in `.ai/memory/`.
+- **Self-improvement, human-gated.** Every task leaves a run record; the
+  `team-analyst` mines them for recurring patterns; approved proposals become
+  skills and standing rules via the `retrospective` playbook.
 
 ## Engineering values
 - Boring, idiomatic code beats clever code. Match the codebase you're in.
@@ -30,3 +33,5 @@
 | DevOps Engineer | `devops-engineer` | CI/CD, deploys, rollbacks, monitoring, observability |
 | Documentation Engineer | `documentation-engineer` | READMEs, API docs, ADRs, guides, release notes |
 | QA Engineer | `qa-engineer` | Tests, verification, the done-signal |
+| Team Analyst | `team-analyst` | Mining run records for patterns; improvement proposals |
+| Skill Builder | `skill-builder` | Applying user-approved proposals to skills and standards |

@@ -9,6 +9,10 @@ production together — a version cut, a scheduled release, or a batched ship.
 
 **Owner:** the Conductor (`CLAUDE.md`) drives every step; specialists execute.
 
+**Artifacts:** use a work directory `.ai/work/{NNN}-{slug}/` (see
+`.ai/work/README.md`) — the release scope, review verdicts, and deploy report
+are files, and a stopped release resumes from its artifacts.
+
 ## Sequence
 
 1. **Scope the release** → dispatch `tech-lead`.
@@ -45,6 +49,8 @@ production together — a version cut, a scheduled release, or a batched ship.
      the release is live.
 
 6. **Record** → Conductor.
+   Distill the work directory into a run record at `.ai/memory/runs/` —
+   verdicts, tagged findings, decisions with expected → observed outcomes.
    Append a one-line entry to `.ai/memory/INDEX.md` and write a dated release note
    under `.ai/memory/releases/` — version, contents, deploy outcome, and any
    follow-up. Log any decision in `.ai/memory/decisions/` and

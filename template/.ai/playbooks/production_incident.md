@@ -9,6 +9,11 @@ unresponsive system, data corruption, or a suspected security breach.
 
 **Owner:** the Conductor (`CLAUDE.md`) drives every step; specialists execute.
 
+**Artifacts:** stabilizing comes first — but for anything beyond a quick
+mitigation, open a work directory `.ai/work/{NNN}-{slug}/` like any other task
+(see `.ai/work/README.md`), so diagnosis, fix reports, and verdicts are files
+and an interrupted incident resumes from its artifacts.
+
 ## Sequence
 
 1. **Triage** → Conductor, pulling in the specialist whose domain matches the
@@ -45,11 +50,16 @@ unresponsive system, data corruption, or a suspected security breach.
 
 5. **Resolve & restore** → Conductor.
    - FAIL → return to step 2 with the specific failure; do not declare resolved.
+     The circuit-breaker applies here too: the same tagged failure three rounds
+     running means the diagnosis is wrong — stop and escalate to the user.
    - PASS → confirm production is healthy (metrics nominal, errors cleared, any
      temporary mitigation safely removed or made permanent). The incident is over.
 
 6. **Record + postmortem** → Conductor.
-   Append a one-line entry to `.ai/memory/INDEX.md`, then write a **blameless**
+   Distill the work directory (if one was opened) into a run record at
+   `.ai/memory/runs/` — verdicts, tagged findings, decisions with expected →
+   observed outcomes. Append a one-line entry to `.ai/memory/INDEX.md`, then
+   write a **blameless**
    postmortem note under `.ai/memory/` — what happened, root cause, the fix, and
    prevention. Capture a concrete follow-up to stop recurrence: the regression
    test from step 4, or a `technical_debt` entry for the deeper work. Log any

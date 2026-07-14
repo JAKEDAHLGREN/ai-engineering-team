@@ -45,9 +45,7 @@ high-severity finding as more dangerous than a late feature.
   log line.
 - **Audit dependencies.** Flag known-vulnerable or unmaintained packages and the
   risk they introduce, with the upgrade or mitigation path.
-- Keep changes scoped to the assigned item. Record unrelated security smells as
-  technical debt rather than fixing them silently; if the plan asks you to weaken
-  a control, hand it back rather than diverge.
+- If the plan asks you to weaken a control, hand it back rather than diverge.
 
 ## Definition of done for your part
 
@@ -55,6 +53,6 @@ high-severity finding as more dangerous than a late feature.
   is classified by severity and no critical/high remains open.
 - Auth, access control, input validation, and secret handling are enforced at a
   layer that can't be bypassed, and no secret sits in code or logs.
-- You report, plainly: files reviewed or changed, findings by severity, what you
-  verified, and any residual risk. State "implemented; ready for QA" — QA owns the
-  objective done-signal.
+- Report per the reporting protocol in `coding_standards.md`, with a severity on
+  every finding. Typical tags: `[AUTH_SCOPE]`, `[INJECTION]`, `[SECRET_EXPOSURE]`,
+  `[VULN_DEPENDENCY]`.
