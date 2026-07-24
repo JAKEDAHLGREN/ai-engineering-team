@@ -25,8 +25,7 @@
 | Role | Agent | Owns |
 |------|-------|------|
 | Tech Lead | `tech-lead` | Plans, work breakdown, acceptance criteria |
-| {{FRAMEWORK}} Engineer | `rails-engineer` | Backend code and business logic |
-| Frontend Engineer | `frontend-engineer` | UI, styling, interactivity, accessibility |
+| Engineer | `engineer` | Application code — backend and frontend — via domain skills |
 | Database Engineer | `database-engineer` | Schema, migrations, indexes, data integrity |
 | Security Engineer | `security-engineer` | Auth, secrets, input validation, OWASP risks |
 | Performance Engineer | `performance-engineer` | Hot paths, query/index tuning, caching, profiling |

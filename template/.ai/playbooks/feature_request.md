@@ -35,12 +35,15 @@ first missing artifact.
    Lead surfaces an open question that's genuinely the user's call, the
    Conductor asks the user before proceeding.
 
-3. **Build** → dispatch the engineer who owns each work item, running the
-   `add-feature` skill against the plan and the coding standards:
-   - `rails-engineer` — backend: models, controllers, services, jobs, business logic.
-   - `frontend-engineer` — UI: views, components, styling, interactivity, a11y.
-   - `database-engineer` — non-trivial migrations, indexes, and constraints; and
-     **reviews any schema change** another engineer produces before it ships.
+3. **Build** → dispatch an `engineer` for each work item, running the `add-feature`
+   skill plus the domain skill the item needs:
+   - backend items (models, controllers, services, jobs, business logic) → the
+     `backend-development` skill.
+   - frontend items (views, components, styling, interactivity, a11y) → the
+     `frontend-development` skill.
+   - `database-engineer` authors non-trivial migrations, indexes, and constraints,
+     and **reviews any schema change** an engineer produces before it ships
+     (writing `verdict-database.r{round}.md`).
 
    Dispatch independent work items in parallel (e.g. backend and UI often proceed
    together once the data contract is set); dependent items wait on their blockers.

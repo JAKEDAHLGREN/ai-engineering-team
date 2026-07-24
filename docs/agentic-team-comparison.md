@@ -176,8 +176,16 @@ Apply Robert's test to your five skills: *"What would an agent have to guess fro
 > macOS), unrelated to the app's own database.
 >
 > Not done (requires infrastructure, per the original roadmap): event-driven
-> triggers. Still open per Robert's later feedback: collapsing construction agents
-> into one `engineer` + skills, and the agent-prompt "beliefs" layer.
+> triggers.
+>
+> **Follow-up shipped:** the construction agents (`rails-engineer` +
+> `frontend-engineer`) were collapsed into one `engineer` that loads
+> `backend-development` / `frontend-development` skills — written as **belief
+> documents** (principles + rationale, not just steps), which delivers the
+> agent-prompt "beliefs" layer in the same pass. `database-engineer` was kept
+> separate because it also independently reviews schema changes. Still open per
+> Robert's feedback: growing the evaluation/ops roles (QA, security, devops) into
+> sub-teams, and per-project team specialization.
 
 ---
 

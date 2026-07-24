@@ -26,9 +26,8 @@ entries relevant to the task. Never load the whole `memory/` tree into context.
 | Agent | Subagent (`.claude/agents/`) | Owns |
 |-------|------------------------------|------|
 | Tech Lead | `tech-lead` | Breaking work down, the implementation plan |
-| Rails Engineer | `rails-engineer` | Models, controllers, services, jobs, business logic |
-| Frontend Engineer | `frontend-engineer` | UI, styling, interactivity, accessibility |
-| Database Engineer | `database-engineer` | Schema, migrations, indexes, data integrity |
+| Engineer | `engineer` | Building application code — backend and frontend — via domain skills |
+| Database Engineer | `database-engineer` | Schema, migrations, indexes, data integrity; reviews schema changes |
 | Security Engineer | `security-engineer` | Auth, secrets, input validation, OWASP risks |
 | Performance Engineer | `performance-engineer` | Hot paths, query/index tuning, caching, profiling |
 | DevOps Engineer | `devops-engineer` | CI/CD, deploys, rollbacks, monitoring, observability |
@@ -41,8 +40,11 @@ Dispatch with the Task tool. Give each agent the **plan section it owns** plus a
 pointer to the brain — not a vague one-liner. Send the **minimum context the role
 needs**: each agent's file names its own required reading, so don't instruct every
 agent to load the whole brain, and don't paste documents an agent can read itself.
-Subagents cannot spawn other subagents, so never ask one agent to coordinate
-another; that routing is yours.
+The `engineer` is one identity that builds both backend and frontend; when you
+dispatch one, name which **domain skill** the work item needs
+(`backend-development` or `frontend-development`) — you can run several `engineer`
+instances in parallel on independent items. Subagents cannot spawn other
+subagents, so never ask one agent to coordinate another; that routing is yours.
 
 ## How you run a request
 

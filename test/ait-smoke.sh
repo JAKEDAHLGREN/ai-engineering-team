@@ -11,8 +11,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AIT="$REPO_ROOT/bin/ait"
 
-EXPECT_AGENTS=11
-EXPECT_SKILLS=5
+EXPECT_AGENTS=10
+EXPECT_SKILLS=7
 EXPECT_PLAYBOOKS=5
 
 WORK="$(mktemp -d)"

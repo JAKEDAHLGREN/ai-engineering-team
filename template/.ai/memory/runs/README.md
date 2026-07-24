@@ -19,7 +19,7 @@ Distilling one task into rows (see `.ai/bin/mem --help` for exact flags):
 RID=$(.ai/bin/mem log-run --slug {NNN}-{slug} --playbook feature_request --rounds N --verdict PASS)
 .ai/bin/mem log-finding    --run $RID --tag MISSING_TEST --round 1 --file app/x.rb --desc "..." --source verdict
 .ai/bin/mem log-decision   --run $RID --summary "..." --alternative "..." --expected "..." --observed "..."
-.ai/bin/mem log-reflection --run $RID --agent rails-engineer --type struggle --desc "..."
+.ai/bin/mem log-reflection --run $RID --agent engineer --type struggle --desc "..."
 ```
 
 - **Findings** come from every verdict *and* every builder report — builders tag

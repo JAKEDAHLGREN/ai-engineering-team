@@ -105,11 +105,11 @@ git add CLAUDE.md .claude .ai && git commit -m "Add AI Engineering Team"
 > clones won't see them, and the team will be incomplete. `ait init` detects this
 > and prints the exact fix: add a negation such as `!.claude/agents/` after the
 > ignoring rule, then `git add .claude/agents`. Verify with
-> `git ls-files .claude/agents | wc -l` (expect 11).
+> `git ls-files .claude/agents | wc -l` (expect 10).
 
 **6. Use it.** Open the project in Claude Code and just ask for a feature — e.g.
 *"Add CSV export to the invoices page."* The Conductor (`CLAUDE.md`) plans it,
-dispatches the right specialists (Rails, Frontend, Database) in parallel, and won't
+dispatches engineers (backend, frontend) and the database specialist in parallel, and won't
 call it done until the QA Engineer reports the test suite green.
 
 > **Tip:** put `ait` on your `PATH` to skip the long path —
@@ -193,8 +193,7 @@ your-project/
 ├── .claude/
 │   ├── agents/
 │   │   ├── tech-lead.md            # plans work, sets acceptance criteria
-│   │   ├── rails-engineer.md       # implements backend code
-│   │   ├── frontend-engineer.md    # UI, styling, interactivity, accessibility
+│   │   ├── engineer.md             # builds backend + frontend via domain skills
 │   │   ├── database-engineer.md    # schema, migrations, indexes, integrity
 │   │   ├── security-engineer.md    # auth, secrets, input validation, OWASP risks
 │   │   ├── performance-engineer.md # hot paths, query/index tuning, profiling
@@ -205,6 +204,8 @@ your-project/
 │   │   └── skill-builder.md        # applies user-approved proposals
 │   └── skills/
 │       ├── add-feature/SKILL.md
+│       ├── backend-development/SKILL.md  # backend principles + how (beliefs)
+│       ├── frontend-development/SKILL.md # frontend principles + how (beliefs)
 │       ├── run-tests/SKILL.md
 │       ├── security-review/SKILL.md
 │       ├── optimize-query/SKILL.md
@@ -255,9 +256,9 @@ Conductor (CLAUDE.md)  ── loads the brain, clarifies if ambiguous, opens .ai
    ↓
 tech-lead          ── plan.md: work items, owners, acceptance criteria
    ↓
-rails-engineer  ┐
-frontend-engineer ├─ build the work items in parallel (add-feature skill);
-database-engineer ┘  database-engineer also reviews any schema change (verdict)
+engineer (backend)  ┐
+engineer (frontend) ├─ build the work items in parallel (add-feature + domain skill);
+database-engineer   ┘  database-engineer also reviews any schema change (verdict)
    ↓
 qa-engineer        ── runs the suite (run-tests skill) → tagged PASS / FAIL verdict
    ↓
@@ -296,9 +297,10 @@ standards are wrong, not the engineer.
 
 ## Roadmap
 
-**Shipped:** the eleven-role roster (Tech Lead, Rails, Frontend, Database,
-Security, Performance, DevOps, Documentation, QA, plus the Team Analyst and
-Skill Builder learning loop); the `add-feature`, `run-tests`, `security-review`,
+**Shipped:** the ten-role roster (Tech Lead; one Engineer that builds backend and
+frontend via domain skills; Database, Security, Performance, DevOps, Documentation,
+QA; plus the Team Analyst and Skill Builder learning loop); the `add-feature`,
+`backend-development`, `frontend-development`, `run-tests`, `security-review`,
 `optimize-query`, and `deploy` skills; the `feature_request` (clarify-first),
 `production_incident`, `release`, `retrospective`, and `memory_consolidation`
 playbooks; file-based handoffs in `.ai/work/`; tagged findings via a controlled

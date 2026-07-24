@@ -28,7 +28,7 @@ and an interrupted incident resumes from its artifacts.
 2. **Diagnose** → dispatch the specialist whose domain matches the symptom:
    - `performance-engineer` — latency, timeouts, memory/CPU, saturation.
    - `database-engineer` — bad data, slow queries, locks, migrations gone wrong.
-   - `rails-engineer` — incorrect business logic or application behavior.
+   - `engineer` — incorrect business logic or application behavior.
    - `security-engineer` — a breach, vulnerability, or exposed data.
 
    Diagnose from **evidence** — logs, metrics, query plans, traces — not
