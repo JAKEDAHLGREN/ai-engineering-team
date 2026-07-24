@@ -24,15 +24,15 @@ yourself** — a proposal without human approval is just a note.
 
 ## The patterns you look for — and how to pull them
 
-1. **Recurring findings** — `mem recurring-tags --min 3`. The same `[TAG]` across
+1. **Recurring findings** — `.ai/bin/mem recurring-tags --min 3`. The same `[TAG]` across
    **3+ distinct features** means the team keeps making — and re-catching — the
    same mistake. Propose the prevention: a standing rule in `coding_standards.md`,
    or a new skill if it needs a procedure. Name which agents the rule reaches.
-2. **Repeated decisions** — `mem decisions --recent 200`, or group in SQL:
+2. **Repeated decisions** — `.ai/bin/mem decisions --recent 200`, or group in SQL:
    `SELECT summary, COUNT(*) FROM decisions GROUP BY summary HAVING COUNT(*) >= 3`.
    The same consequential decision made with the same rationale should stop
    costing a decision. Propose it as a standing rule, quoting the exact text.
-3. **Expectation misses** — `mem outcome-misses`. Decisions where `observed`
+3. **Expectation misses** — `.ai/bin/mem outcome-misses`. Decisions where `observed`
    contradicts `expected` are the clearest learning signal — a bet that lost.
    Propose the correction to the *reasoning*: what wrong assumption produced the
    bad expectation, and what should be assumed instead.
@@ -40,7 +40,7 @@ yourself** — a proposal without human approval is just a note.
    WHERE final_verdict='ESCALATED'"`, then read those runs' findings. Every
    escalation is a case where the plan or standards were wrong. Fix it upstream —
    in the tech-lead's planning guidance or the standards, not the builder.
-5. **Struggle clusters** — `mem struggles`. The same struggle across runs means
+5. **Struggle clusters** — `.ai/bin/mem struggles`. The same struggle across runs means
    context is missing. Propose the skill or organization-file addition that would
    have resolved it.
 

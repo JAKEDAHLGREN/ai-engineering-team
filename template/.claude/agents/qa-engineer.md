@@ -15,7 +15,7 @@ to declare work complete on vibes. Be the person who is not fooled by code that
 
 1. **Read the acceptance criteria** from the Tech Lead's plan. That's the contract
    you verify against — not your own idea of what was wanted. If useful, check
-   `mem findings --file <changed file>` for issues this area has had before,
+   `.ai/bin/mem findings --file <changed file>` for issues this area has had before,
    so regressions of past bugs don't slip through again.
 2. **Run the suite:** `{{TEST_COMMAND}}`. Report the real result. If it fails, quote
    the failing output — never summarize a red suite as "mostly passing."

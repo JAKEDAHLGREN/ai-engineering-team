@@ -24,6 +24,7 @@
 #   mem struggles                             Struggle reflections, most frequent first
 #
 # DB path: .ai/memory/agent_log.sqlite3 (override with AGENT_LOG_DB).
+# Invoke as `.ai/bin/mem` from the project root (it is not on PATH).
 
 set -uo pipefail
 
@@ -39,6 +40,15 @@ command -v sqlite3 >/dev/null 2>&1 || die \
 
 # Escape a value for single-quoted SQL (double any embedded single quotes).
 sqlesc() { printf "%s" "${1:-}" | sed "s/'/''/g"; }
+
+# Ensure a value is a non-negative integer before it is spliced into SQL
+# unquoted — numeric columns and LIMIT/HAVING clauses can't be string-escaped.
+intval() {
+  case "${1:-}" in
+    ''|*[!0-9]*) die "expected an integer, got '${1:-}'" ;;
+    *)           printf '%s' "$1" ;;
+  esac
+}
 
 # Parse --flag value pairs into FLAG_<name> variables (dashes -> underscores).
 declare -A FLAG
@@ -123,7 +133,7 @@ case "$cmd" in
     verdict="$(flag verdict)"; [ -n "$verdict" ] || die "--verdict is required (PASS|ESCALATED)"
     sqlite3 "$DB" "INSERT INTO runs (slug, playbook, rounds, final_verdict)
       VALUES ('$(sqlesc "$slug")', '$(sqlesc "$(flag playbook)")',
-              $(flag rounds 1), '$(sqlesc "$verdict")');
+              $(intval "$(flag rounds 1)"), '$(sqlesc "$verdict")');
       SELECT last_insert_rowid();"
     ;;
 
@@ -132,7 +142,7 @@ case "$cmd" in
     tag="$(flag tag)"; [ -n "$tag" ] || die "--tag is required"
     validate_tag "$tag"
     sqlite3 "$DB" "INSERT INTO findings (run_id, tag, round, file, description, source)
-      VALUES ($(flag run), '$(sqlesc "$tag")', $(flag round 1),
+      VALUES ($(intval "$(flag run)"), '$(sqlesc "$tag")', $(intval "$(flag round 1)"),
               '$(sqlesc "$(flag file)")', '$(sqlesc "$(flag desc)")',
               '$(sqlesc "$(flag source verdict)")');"
     ;;
@@ -141,25 +151,25 @@ case "$cmd" in
     parse_flags "$@"; ensure_db; require_run
     summary="$(flag summary)"; [ -n "$summary" ] || die "--summary is required"
     sqlite3 "$DB" "INSERT INTO decisions (run_id, summary, alternative, expected, observed)
-      VALUES ($(flag run), '$(sqlesc "$summary")', '$(sqlesc "$(flag alternative)")',
+      VALUES ($(intval "$(flag run)"), '$(sqlesc "$summary")', '$(sqlesc "$(flag alternative)")',
               '$(sqlesc "$(flag expected)")', '$(sqlesc "$(flag observed)")');"
     ;;
 
   log-reflection)
     parse_flags "$@"; ensure_db; require_run
     sqlite3 "$DB" "INSERT INTO reflections (run_id, agent, type, description)
-      VALUES ($(flag run), '$(sqlesc "$(flag agent)")',
+      VALUES ($(intval "$(flag run)"), '$(sqlesc "$(flag agent)")',
               '$(sqlesc "$(flag type struggle)")', '$(sqlesc "$(flag desc)")');"
     ;;
 
   runs)
-    ensure_db; n="${1:-20}"
+    ensure_db; n="$(intval "${1:-20}")"
     q "SELECT id, created_at, slug, playbook, rounds, final_verdict
        FROM runs ORDER BY id DESC LIMIT $n;"
     ;;
 
   recurring-tags)
-    parse_flags "$@"; ensure_db; min="$(flag min 3)"
+    parse_flags "$@"; ensure_db; min="$(intval "$(flag min 3)")"
     q "SELECT f.tag, COUNT(DISTINCT r.slug) AS features, COUNT(*) AS occurrences
        FROM findings f JOIN runs r ON f.run_id = r.id
        GROUP BY f.tag HAVING COUNT(DISTINCT r.slug) >= $min
@@ -179,12 +189,12 @@ case "$cmd" in
     file="$(flag file)"; [ -n "$file" ] || die "--file <path> is required"
     q "SELECT r.slug, f.tag, f.round, f.description
        FROM findings f JOIN runs r ON f.run_id = r.id
-       WHERE f.file = '$(sqlesc "$file")' OR f.file LIKE '%$(sqlesc "$file")%'
+       WHERE f.file LIKE '%$(sqlesc "$file")%'
        ORDER BY f.created_at DESC;"
     ;;
 
   decisions)
-    parse_flags "$@"; ensure_db; n="$(flag recent 20)"
+    parse_flags "$@"; ensure_db; n="$(intval "$(flag recent 20)")"
     q "SELECT r.slug, d.summary, d.expected, d.observed
        FROM decisions d JOIN runs r ON d.run_id = r.id
        ORDER BY d.id DESC LIMIT $n;"

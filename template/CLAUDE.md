@@ -85,10 +85,10 @@ another; that routing is yours.
    user**: three rounds of the same failure means the plan or the standards are
    wrong, not the engineer. Record the escalation in `.ai/memory/INDEX.md`.
 8. **Record.** Distill the work directory into the structured store with
-   `.ai/bin/mem` (see `.ai/memory/runs/README.md`): `mem log-run` for the task,
-   then `mem log-finding` for every tagged finding from the verdicts and
-   reports, `mem log-decision` with **expected → observed** outcomes filled in
-   honestly, and `mem log-reflection` for the Agent Notes. An escalation is a
+   `.ai/bin/mem` (see `.ai/memory/runs/README.md`): `.ai/bin/mem log-run` for the task,
+   then `.ai/bin/mem log-finding` for every tagged finding from the verdicts and
+   reports, `.ai/bin/mem log-decision` with **expected → observed** outcomes filled in
+   honestly, and `.ai/bin/mem log-reflection` for the Agent Notes. An escalation is a
    run logged with `--verdict ESCALATED`. Append a one-line entry to
    `.ai/memory/INDEX.md` and, for anything architecturally significant, a dated
    note in the relevant `memory/` folder. Then run `bash .ai/bin/check.sh` and

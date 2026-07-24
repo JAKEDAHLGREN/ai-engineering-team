@@ -189,6 +189,7 @@ your-project/
         ├── decisions/
         ├── technical_debt/
         ├── releases/
+        ├── runs/README.md        # pointer: run records now live in the DB above
         └── proposals/            # analyst proposals + build notes (human-gated)
 ```
 

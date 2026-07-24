@@ -16,10 +16,10 @@ loads only what's asked for.
 Distilling one task into rows (see `.ai/bin/mem --help` for exact flags):
 
 ```bash
-RID=$(mem log-run --slug {NNN}-{slug} --playbook feature_request --rounds N --verdict PASS)
-mem log-finding    --run $RID --tag MISSING_TEST --round 1 --file app/x.rb --desc "..." --source verdict
-mem log-decision   --run $RID --summary "..." --alternative "..." --expected "..." --observed "..."
-mem log-reflection --run $RID --agent rails-engineer --type struggle --desc "..."
+RID=$(.ai/bin/mem log-run --slug {NNN}-{slug} --playbook feature_request --rounds N --verdict PASS)
+.ai/bin/mem log-finding    --run $RID --tag MISSING_TEST --round 1 --file app/x.rb --desc "..." --source verdict
+.ai/bin/mem log-decision   --run $RID --summary "..." --alternative "..." --expected "..." --observed "..."
+.ai/bin/mem log-reflection --run $RID --agent rails-engineer --type struggle --desc "..."
 ```
 
 - **Findings** come from every verdict *and* every builder report — builders tag
@@ -33,7 +33,7 @@ mem log-reflection --run $RID --agent rails-engineer --type struggle --desc "...
   finding tag that persisted.
 
 Then append one human-readable line to `../INDEX.md` so people keep a browsable
-trail. `mem runs` prints the same list from the database.
+trail. `.ai/bin/mem runs` prints the same list from the database.
 
 ## What still lives as markdown
 
@@ -43,7 +43,7 @@ from; only the structured, aggregatable learning data moved to the database.
 
 ## Database
 
-`.ai/memory/agent_log.sqlite3`, created on first use by `mem init`. Requires the
+`.ai/memory/agent_log.sqlite3`, created on first use by `.ai/bin/mem init`. Requires the
 `sqlite3` CLI (ships with macOS; `apt install sqlite3` on Linux) — the binary
 only, unrelated to your application's database. Committed with the project so the
 learning history travels to fresh clones. Override the path with `AGENT_LOG_DB`.
