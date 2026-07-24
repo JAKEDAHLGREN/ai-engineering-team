@@ -122,6 +122,41 @@ sed -i.bak '/^## Escalations/d' "$G/.ai/memory/runs/2026-07-14-001-fix.md"
   || pass "checker catches a missing run-record section"
 rm -rf "$G/.ai/work/001-fix" "$G/.ai/memory/runs/2026-07-14-001-fix.md" "$G/.ai/memory/runs/2026-07-14-001-fix.md.bak"
 
+echo "== case: mem structured memory =="
+[ -f "$G/.ai/bin/mem" ] || fail "mem not installed"
+if command -v sqlite3 >/dev/null 2>&1; then
+  (
+    cd "$G"
+    bash .ai/bin/mem init >/dev/null || exit 1
+    rid=$(bash .ai/bin/mem log-run --slug feat-a --verdict PASS | tail -1)
+    [ "$rid" = "1" ] || { echo "log-run did not return id 1 (got '$rid')"; exit 1; }
+    bash .ai/bin/mem log-finding --run "$rid" --tag MISSING_TEST --file app/x.rb --desc t || exit 1
+    # unknown tag must be rejected at write time
+    bash .ai/bin/mem log-finding --run "$rid" --tag NOPE --desc t >/dev/null 2>&1 && exit 2
+    # a tag across 3 features must surface in recurring-tags; a one-off must not
+    for s in feat-b feat-c; do
+      r=$(bash .ai/bin/mem log-run --slug "$s" --verdict PASS | tail -1)
+      bash .ai/bin/mem log-finding --run "$r" --tag MISSING_TEST --desc t
+    done
+    r=$(bash .ai/bin/mem log-run --slug feat-d --verdict PASS | tail -1)
+    bash .ai/bin/mem log-finding --run "$r" --tag N_PLUS_ONE --desc once
+    out=$(bash .ai/bin/mem recurring-tags --min 3)
+    grep -q 'MISSING_TEST' <<<"$out" || exit 3
+    grep -q 'N_PLUS_ONE'  <<<"$out" && exit 4
+    exit 0
+  )
+  case "$?" in
+    0) pass "mem: log/query works, unknown tag rejected, recurrence aggregates" ;;
+    2) fail "mem accepted an unknown tag" ;;
+    3) fail "mem recurring-tags missed a tag across 3 features" ;;
+    4) fail "mem recurring-tags surfaced a one-off tag" ;;
+    *) fail "mem CLI failed a basic operation" ;;
+  esac
+  rm -f "$G/.ai/memory/agent_log.sqlite3"
+else
+  pass "mem installed (sqlite3 absent on runner — behavioral checks skipped)"
+fi
+
 echo "== case: brownfield install preserves existing files =="
 B="$WORK/brown"; mkdir -p "$B/.claude/agents"
 printf '# My Project\n\nKeep these instructions.\n' > "$B/CLAUDE.md"

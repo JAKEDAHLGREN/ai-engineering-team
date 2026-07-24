@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+#
+# mem — the team's structured memory: a queryable store for run records,
+# findings, decisions, and reflections. Backed by SQLite via the `sqlite3`
+# CLI (no language runtime, no gem). This is the learning-loop dataset —
+# the narrative brain (architecture, ADRs, postmortems) stays markdown.
+#
+# The Conductor writes to it once at task close-out (distilling the work
+# directory); the team-analyst queries it at retrospective time; agents may
+# query it for targeted recall before acting. It queries and loads only what
+# is asked for — never the whole history into context.
+#
+# Usage:
+#   mem init                                  Create the DB and schema (idempotent)
+#   mem log-run    --slug S --verdict V [--playbook P] [--rounds N]   -> prints run id
+#   mem log-finding    --run ID --tag TAG [--round N] [--file F] [--desc D] [--source verdict|report]
+#   mem log-decision   --run ID --summary S [--alternative A] [--expected E] [--observed O]
+#   mem log-reflection --run ID [--agent A] [--type struggle|assumption] [--desc D]
+#   mem runs [N]                              Recent runs (default 20)
+#   mem recurring-tags [--min N]              Tags across >= N distinct features (default 3)
+#   mem outcome-misses                        Decisions where observed != expected
+#   mem findings --file PATH                  Prior findings touching a file
+#   mem decisions [--recent N]                Recent decisions (default 20)
+#   mem struggles                             Struggle reflections, most frequent first
+#
+# DB path: .ai/memory/agent_log.sqlite3 (override with AGENT_LOG_DB).
+
+set -uo pipefail
+
+DB="${AGENT_LOG_DB:-.ai/memory/agent_log.sqlite3}"
+VOCAB=".ai/organization/finding_vocabulary.md"
+
+die() { echo "mem: $*" >&2; exit 1; }
+
+command -v sqlite3 >/dev/null 2>&1 || die \
+  "the 'sqlite3' command-line tool is required but not found.
+   macOS ships it by default; on Linux install 'sqlite3'. This is the CLI
+   binary only — it has nothing to do with your app's database."
+
+# Escape a value for single-quoted SQL (double any embedded single quotes).
+sqlesc() { printf "%s" "${1:-}" | sed "s/'/''/g"; }
+
+# Parse --flag value pairs into FLAG_<name> variables (dashes -> underscores).
+declare -A FLAG
+parse_flags() {
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --*) local k="${1#--}"; k="${k//-/_}"; FLAG["$k"]="${2:-}"; shift 2 ;;
+      *)   POSITIONAL+=("$1"); shift ;;
+    esac
+  done
+}
+flag() { printf '%s' "${FLAG[$1]:-${2:-}}"; }
+
+SCHEMA="
+PRAGMA foreign_keys=ON;
+CREATE TABLE IF NOT EXISTS runs (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug          TEXT NOT NULL,
+  playbook      TEXT,
+  rounds        INTEGER DEFAULT 1,
+  final_verdict TEXT NOT NULL,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+CREATE TABLE IF NOT EXISTS findings (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id      INTEGER NOT NULL REFERENCES runs(id),
+  tag         TEXT NOT NULL,
+  round       INTEGER DEFAULT 1,
+  file        TEXT,
+  description TEXT,
+  source      TEXT DEFAULT 'verdict',
+  created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+CREATE TABLE IF NOT EXISTS decisions (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id      INTEGER NOT NULL REFERENCES runs(id),
+  summary     TEXT NOT NULL,
+  alternative TEXT,
+  expected    TEXT,
+  observed    TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+CREATE TABLE IF NOT EXISTS reflections (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id      INTEGER NOT NULL REFERENCES runs(id),
+  agent       TEXT,
+  type        TEXT DEFAULT 'struggle',
+  description TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+"
+
+ensure_db() {
+  mkdir -p "$(dirname "$DB")"
+  sqlite3 "$DB" "$SCHEMA"
+}
+
+require_run() { [ -n "$(flag run)" ] || die "--run <id> is required"; }
+
+# A tag must exist in the controlled vocabulary — enforced at write time so a
+# typo can never enter the dataset and silently break recurrence detection.
+validate_tag() {
+  local tag="$1"
+  [ -f "$VOCAB" ] || die "$VOCAB not found — run from the project root"
+  grep -o '`[A-Z][A-Z0-9_]*`' "$VOCAB" | tr -d '`' | grep -qx "$tag" \
+    || die "unknown tag [$tag] — not in $VOCAB. Add it there first if it's real."
+}
+
+q() { sqlite3 -column -header "$DB" "$1"; }
+
+POSITIONAL=()
+cmd="${1:-}"; shift || true
+
+case "$cmd" in
+  init)
+    ensure_db && echo "mem: schema ready at $DB"
+    ;;
+
+  log-run)
+    parse_flags "$@"; ensure_db
+    slug="$(flag slug)";    [ -n "$slug" ]    || die "--slug is required"
+    verdict="$(flag verdict)"; [ -n "$verdict" ] || die "--verdict is required (PASS|ESCALATED)"
+    sqlite3 "$DB" "INSERT INTO runs (slug, playbook, rounds, final_verdict)
+      VALUES ('$(sqlesc "$slug")', '$(sqlesc "$(flag playbook)")',
+              $(flag rounds 1), '$(sqlesc "$verdict")');
+      SELECT last_insert_rowid();"
+    ;;
+
+  log-finding)
+    parse_flags "$@"; ensure_db; require_run
+    tag="$(flag tag)"; [ -n "$tag" ] || die "--tag is required"
+    validate_tag "$tag"
+    sqlite3 "$DB" "INSERT INTO findings (run_id, tag, round, file, description, source)
+      VALUES ($(flag run), '$(sqlesc "$tag")', $(flag round 1),
+              '$(sqlesc "$(flag file)")', '$(sqlesc "$(flag desc)")',
+              '$(sqlesc "$(flag source verdict)")');"
+    ;;
+
+  log-decision)
+    parse_flags "$@"; ensure_db; require_run
+    summary="$(flag summary)"; [ -n "$summary" ] || die "--summary is required"
+    sqlite3 "$DB" "INSERT INTO decisions (run_id, summary, alternative, expected, observed)
+      VALUES ($(flag run), '$(sqlesc "$summary")', '$(sqlesc "$(flag alternative)")',
+              '$(sqlesc "$(flag expected)")', '$(sqlesc "$(flag observed)")');"
+    ;;
+
+  log-reflection)
+    parse_flags "$@"; ensure_db; require_run
+    sqlite3 "$DB" "INSERT INTO reflections (run_id, agent, type, description)
+      VALUES ($(flag run), '$(sqlesc "$(flag agent)")',
+              '$(sqlesc "$(flag type struggle)")', '$(sqlesc "$(flag desc)")');"
+    ;;
+
+  runs)
+    ensure_db; n="${1:-20}"
+    q "SELECT id, created_at, slug, playbook, rounds, final_verdict
+       FROM runs ORDER BY id DESC LIMIT $n;"
+    ;;
+
+  recurring-tags)
+    parse_flags "$@"; ensure_db; min="$(flag min 3)"
+    q "SELECT f.tag, COUNT(DISTINCT r.slug) AS features, COUNT(*) AS occurrences
+       FROM findings f JOIN runs r ON f.run_id = r.id
+       GROUP BY f.tag HAVING COUNT(DISTINCT r.slug) >= $min
+       ORDER BY features DESC, occurrences DESC;"
+    ;;
+
+  outcome-misses)
+    ensure_db
+    q "SELECT r.slug, d.summary, d.expected, d.observed
+       FROM decisions d JOIN runs r ON d.run_id = r.id
+       WHERE d.observed IS NOT NULL AND d.observed != '' AND d.observed != d.expected
+       ORDER BY d.id DESC;"
+    ;;
+
+  findings)
+    parse_flags "$@"; ensure_db
+    file="$(flag file)"; [ -n "$file" ] || die "--file <path> is required"
+    q "SELECT r.slug, f.tag, f.round, f.description
+       FROM findings f JOIN runs r ON f.run_id = r.id
+       WHERE f.file = '$(sqlesc "$file")' OR f.file LIKE '%$(sqlesc "$file")%'
+       ORDER BY f.created_at DESC;"
+    ;;
+
+  decisions)
+    parse_flags "$@"; ensure_db; n="$(flag recent 20)"
+    q "SELECT r.slug, d.summary, d.expected, d.observed
+       FROM decisions d JOIN runs r ON d.run_id = r.id
+       ORDER BY d.id DESC LIMIT $n;"
+    ;;
+
+  struggles)
+    ensure_db
+    q "SELECT description, COUNT(*) AS n FROM reflections
+       WHERE type = 'struggle' GROUP BY description ORDER BY n DESC;"
+    ;;
+
+  ""|help|-h|--help)
+    sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+
+  *)
+    die "unknown command '$cmd' — run 'mem help'"
+    ;;
+esac
