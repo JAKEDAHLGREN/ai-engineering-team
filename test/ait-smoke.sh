@@ -90,7 +90,7 @@ pass "skill frontmatter names match directories"
 pass "greenfield CLAUDE.md has one conductor block"
 
 echo "== case: artifact checker =="
-[ -f "$G/.ai/bin/check.sh" ] || fail "check.sh not installed"
+[ -x "$G/.ai/bin/check.sh" ] || fail "check.sh not installed executable"
 mkdir -p "$G/.ai/work/001-fix"
 cat > "$G/.ai/work/001-fix/verdict-qa.r1.md" <<'FIX'
 # Verdict — 001-fix · qa-engineer · round 1
@@ -127,7 +127,7 @@ if command -v sqlite3 >/dev/null 2>&1; then
 fi
 
 echo "== case: mem structured memory =="
-[ -f "$G/.ai/bin/mem" ] || fail "mem not installed"
+[ -x "$G/.ai/bin/mem" ] || fail "mem not installed executable"
 if command -v sqlite3 >/dev/null 2>&1; then
   (
     cd "$G"

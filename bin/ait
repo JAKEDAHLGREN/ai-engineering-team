@@ -152,6 +152,13 @@ is_project_owned() {
   return 1
 }
 
+# make_bin_executable TARGET -> the scripts under .ai/bin/ (mem, check.sh) must be
+# executable so they can be invoked directly (e.g. `.ai/bin/mem init`). git may
+# not preserve the executable bit through every transport, so set it on install.
+make_bin_executable() {
+  [ -d "$1/.ai/bin" ] && chmod +x "$1"/.ai/bin/* 2>/dev/null || true
+}
+
 # sync_conductor_block TARGET  -> insert/replace the Conductor managed block in
 # the project's CLAUDE.md, rendered with the current placeholder values. The rest
 # of an existing CLAUDE.md is left exactly as-is.
@@ -238,6 +245,7 @@ cmd_init() {
     added=$((added + 1))
   done < <(find "$TEMPLATE_DIR" -type f -print0)
 
+  make_bin_executable "$target"
   sync_conductor_block "$target"
   write_manifest "$target"
 
@@ -307,6 +315,7 @@ cmd_update() {
     render_file "$dest"
   done < <(find "$TEMPLATE_DIR" -type f -print0)
 
+  make_bin_executable "$target"
   sync_conductor_block "$target"
   write_manifest "$target"
 
