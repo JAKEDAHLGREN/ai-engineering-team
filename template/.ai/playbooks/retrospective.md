@@ -13,9 +13,9 @@ the analyst has anecdotes, not patterns — wait.
 ## Sequence
 
 1. **Analyze** → dispatch `team-analyst`.
-   It reads `.ai/memory/runs/`, the current agents/skills/standards, and prior
-   proposals, then writes an evidence-backed proposal report to
-   `.ai/memory/proposals/YYYY-MM-DD.md`.
+   It queries the memory database (`.ai/bin/mem` / read-only SQL), reads the
+   current agents/skills/standards and prior proposals, then writes an
+   evidence-backed proposal report to `.ai/memory/proposals/YYYY-MM-DD.md`.
    Output: the report path and a numbered one-line summary per proposal.
 
 2. **Review** → Conductor, with the user.
