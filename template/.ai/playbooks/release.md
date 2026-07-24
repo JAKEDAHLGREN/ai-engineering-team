@@ -49,7 +49,7 @@ are files, and a stopped release resumes from its artifacts.
      the release is live.
 
 6. **Record** → Conductor.
-   Distill the work directory into a run record at `.ai/memory/runs/` —
+   Distill the work directory into the structured store with `.ai/bin/mem` —
    verdicts, tagged findings, decisions with expected → observed outcomes.
    Append a one-line entry to `.ai/memory/INDEX.md` and write a dated release note
    under `.ai/memory/releases/` — version, contents, deploy outcome, and any

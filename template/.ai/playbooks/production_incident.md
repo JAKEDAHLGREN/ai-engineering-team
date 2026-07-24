@@ -56,8 +56,8 @@ and an interrupted incident resumes from its artifacts.
      temporary mitigation safely removed or made permanent). The incident is over.
 
 6. **Record + postmortem** → Conductor.
-   Distill the work directory (if one was opened) into a run record at
-   `.ai/memory/runs/` — verdicts, tagged findings, decisions with expected →
+   Distill the work directory (if one was opened) into the structured store
+   with `.ai/bin/mem` — verdicts, tagged findings, decisions with expected →
    observed outcomes. Append a one-line entry to `.ai/memory/INDEX.md`, then
    write a **blameless**
    postmortem note under `.ai/memory/` — what happened, root cause, the fix, and
