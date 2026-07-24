@@ -34,8 +34,9 @@ This is the load-bearing part, so it's stated plainly:
   verdicts live in `.ai/work/{NNN}-{slug}/`; agents pass paths, and interrupted
   tasks resume from their artifacts.
 - **The team learns, with you as the gate.** Every completed task is distilled
-  into a run record; the `team-analyst` mines them for recurring patterns and
-  the `skill-builder` applies only the proposals you approve.
+  into a queryable store (`.ai/memory/agent_log.sqlite3`); the `team-analyst`
+  mines it for recurring patterns and the `skill-builder` applies only the
+  proposals you approve.
 
 The boundary, in one line: **agents = who, skills = how, playbooks = the sequence.**
 
@@ -79,6 +80,13 @@ Code.** The Conductor is added as a clearly-marked managed block inside your
 `.claude/` and `.ai/` trees are merged file-by-file: any file you already have is
 **kept, never overwritten** — `ait` reports what it added and what it kept. Review
 it with `git status` before committing.
+
+> **Prerequisite:** the team's memory store uses the `sqlite3` command-line tool.
+> It ships with macOS by default; on Linux run `apt install sqlite3` (or your
+> distro's equivalent). This is the CLI binary only — it is **unrelated to your
+> application's database** (your app can be Postgres, MySQL, anything). The DB it
+> creates, `.ai/memory/agent_log.sqlite3`, is committed with the project so the
+> learning history travels to fresh clones.
 
 **4. Onboard the team to your codebase.** Open `.ai/organization/` and fill in the
 `TODO`s — at minimum `architecture.md` and any project-specific rules in
@@ -133,6 +141,48 @@ Overwritten files are backed up to `.ai/.ait-backups/<timestamp>/` first, and si
 the team is committed in your project, `git diff` shows exactly what changed before
 you commit it. Nothing you wrote is ever silently lost.
 
+### Migrating a legacy install to the memory database
+
+Projects installed **before the memory database** stored the learning-loop data
+as markdown files under `.ai/memory/runs/`. The framework now uses a queryable
+SQLite store (`.ai/bin/mem` → `.ai/memory/agent_log.sqlite3`). `ait update`
+delivers the *framework-owned* half automatically (the `mem` and `check.sh`
+tools, the updated Conductor block, agents, and playbooks), but the store itself
+and the project-owned docs need three manual steps. Exact sequence:
+
+```bash
+# 1. Update the framework and adopt the framework-owned changes.
+cd ~/tools/ai-engineering-team && git pull
+~/tools/ai-engineering-team/bin/ait update /path/to/your/project
+
+cd /path/to/your/project
+
+# 2. Confirm the sqlite3 CLI is present (macOS ships it; Linux: apt install sqlite3).
+#    This is the CLI binary only — unrelated to your app's own database.
+sqlite3 --version
+
+# 3. Create the store (idempotent; safe to re-run).
+.ai/bin/mem init
+
+# 4. Replace the project-owned run-records README — ait update won't, because
+#    .ai/memory/ is yours — so the old markdown instructions don't linger.
+cp ~/tools/ai-engineering-team/template/.ai/memory/runs/README.md \
+   .ai/memory/runs/README.md
+
+# 5. Your old markdown run records aren't migrated (fresh start by design).
+#    Keep them as an archive so nothing is lost (skip if you have none):
+mkdir -p .ai/memory/runs/_archive
+git mv .ai/memory/runs/[0-9]*.md .ai/memory/runs/_archive/ 2>/dev/null || true
+
+# 6. Verify and commit — including the new database.
+bash .ai/bin/check.sh
+git add CLAUDE.md .claude .ai && git commit -m "Adopt the memory database"
+```
+
+From here the Conductor logs each completed task with `mem`, and the
+`team-analyst` queries the store during the `retrospective` playbook. Nothing
+you wrote is migrated or deleted without your hand in it.
+
 ---
 
 ## What gets installed
@@ -160,6 +210,9 @@ your-project/
 │       ├── optimize-query/SKILL.md
 │       └── deploy/SKILL.md
 └── .ai/
+    ├── bin/
+    │   ├── mem                   # queryable memory store (bash + sqlite3)
+    │   └── check.sh              # mechanical validation of artifacts + DB
     ├── organization/             # the shared brain every agent loads first
     │   ├── organization.md  architecture.md  coding_standards.md
     │   ├── roadmap.md  decision_log.md  glossary.md
@@ -174,12 +227,20 @@ your-project/
     │   └── README.md             # the artifact naming + verdict format
     └── memory/
         ├── INDEX.md              # read first; the retrieval entrypoint
+        ├── agent_log.sqlite3     # the queryable run/finding/decision store
         ├── decisions/
         ├── technical_debt/
         ├── releases/
-        ├── runs/                 # one structured record per completed task
+        ├── runs/README.md        # pointer: run records now live in the DB above
         └── proposals/            # analyst proposals + build notes (human-gated)
 ```
+
+> The narrative brain (`organization/`, `decisions/`, postmortems, releases)
+> stays markdown — human-read, agent-reasoned, git-versioned. Only the
+> **structured learning data** — runs, findings, decisions, reflections — lives
+> in `agent_log.sqlite3`, because that's what needs aggregating ("which finding
+> recurs across features?") and querying without loading everything into
+> context. The `.ai/bin/mem` tool reads and writes it.
 
 ---
 
@@ -200,7 +261,7 @@ database-engineer ┘  database-engineer also reviews any schema change (verdict
    ↓
 qa-engineer        ── runs the suite (run-tests skill) → tagged PASS / FAIL verdict
    ↓
-Conductor          ── FAIL: send back · PASS: done, distill run record to memory
+Conductor          ── FAIL: send back · PASS: done, log the run to memory (mem)
 ```
 
 **"Done" is objective, not vibes.** Code work is not complete until the QA Engineer
@@ -241,8 +302,8 @@ Skill Builder learning loop); the `add-feature`, `run-tests`, `security-review`,
 `optimize-query`, and `deploy` skills; the `feature_request` (clarify-first),
 `production_incident`, `release`, `retrospective`, and `memory_consolidation`
 playbooks; file-based handoffs in `.ai/work/`; tagged findings via a controlled
-vocabulary; run records in `.ai/memory/runs/`; and the human-gated
-self-improvement cycle.
+vocabulary; a queryable SQLite memory store (`.ai/bin/mem`) for runs, findings,
+and decisions; and the human-gated self-improvement cycle.
 
 **Planned, not yet shipped:**
 

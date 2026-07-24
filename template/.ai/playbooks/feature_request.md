@@ -72,11 +72,12 @@ first missing artifact.
      acceptance criteria are wrong — not the engineer. Do not burn a fourth round.
 
 6. **Record** → Conductor.
-   Distill the work directory into a run record at `.ai/memory/runs/` (verdicts,
-   tagged findings, decisions with expected → observed outcomes, Agent Notes —
-   format in the runs README). Append a one-line entry to `.ai/memory/INDEX.md`.
-   For anything architecturally significant, add a dated note under
-   `.ai/memory/decisions/` and log it in `organization/decision_log.md`.
+   Distill the work directory into the structured store with `.ai/bin/mem`
+   (`log-run`, then `log-finding` / `log-decision` / `log-reflection` — see
+   `.ai/memory/runs/README.md`): verdicts, tagged findings, decisions with
+   expected → observed outcomes, Agent Notes. Append a one-line entry to
+   `.ai/memory/INDEX.md`. For anything architecturally significant, add a dated
+   note under `.ai/memory/decisions/` and log it in `organization/decision_log.md`.
 
 ## Done means
 The `tech-lead`'s acceptance criteria are met and `qa-engineer` reported PASS with
