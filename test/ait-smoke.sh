@@ -91,24 +91,12 @@ pass "greenfield CLAUDE.md has one conductor block"
 
 echo "== case: artifact checker =="
 [ -f "$G/.ai/bin/check.sh" ] || fail "check.sh not installed"
-mkdir -p "$G/.ai/work/001-fix" "$G/.ai/memory/runs"
+mkdir -p "$G/.ai/work/001-fix"
 cat > "$G/.ai/work/001-fix/verdict-qa.r1.md" <<'FIX'
 # Verdict — 001-fix · qa-engineer · round 1
 **Verdict:** PASS
 ## Findings
 - [MISSING_TEST] app/models/x.rb:10 — example
-FIX
-cat > "$G/.ai/memory/runs/2026-07-14-001-fix.md" <<'FIX'
-# Run — 001-fix
-**Final verdict:** PASS
-## Findings (all rounds)
-- [MISSING_TEST] r1 · app/models/x.rb:10 — example
-## Consequential decisions
-None.
-## Struggles & assumptions
-None.
-## Escalations
-None.
 FIX
 (cd "$G" && bash .ai/bin/check.sh >/dev/null) || fail "checker rejected valid artifacts"
 pass "checker accepts valid artifacts"
@@ -117,10 +105,61 @@ printf -- '- [NOT_A_REAL_TAG] r1 · x — bad\n' >> "$G/.ai/work/001-fix/verdict
 (cd "$G" && bash .ai/bin/check.sh >/dev/null 2>&1) && fail "checker passed an unknown tag" \
   || pass "checker catches an unknown tag"
 
-sed -i.bak '/^## Escalations/d' "$G/.ai/memory/runs/2026-07-14-001-fix.md"
-(cd "$G" && bash .ai/bin/check.sh >/dev/null 2>&1) && fail "checker passed a run record missing a section" \
-  || pass "checker catches a missing run-record section"
-rm -rf "$G/.ai/work/001-fix" "$G/.ai/memory/runs/2026-07-14-001-fix.md" "$G/.ai/memory/runs/2026-07-14-001-fix.md.bak"
+sed -i.bak '/^\*\*Verdict:\*\*/d' "$G/.ai/work/001-fix/verdict-qa.r1.md"
+# restore the valid tag line so only the missing verdict line is under test
+sed -i.bak2 '/NOT_A_REAL_TAG/d' "$G/.ai/work/001-fix/verdict-qa.r1.md"
+(cd "$G" && bash .ai/bin/check.sh >/dev/null 2>&1) && fail "checker passed a verdict file with no verdict line" \
+  || pass "checker catches a missing verdict line"
+rm -rf "$G/.ai/work/001-fix"
+
+if command -v sqlite3 >/dev/null 2>&1; then
+  (
+    cd "$G"
+    bash .ai/bin/mem init >/dev/null
+    rid=$(bash .ai/bin/mem log-run --slug db-check --verdict PASS | tail -1)
+    # hand-insert a tag mem would have rejected, to prove check.sh is a backstop
+    sqlite3 .ai/memory/agent_log.sqlite3 \
+      "INSERT INTO findings (run_id, tag, description) VALUES ($rid, 'BOGUS_TAG', 'x');"
+    bash .ai/bin/check.sh >/dev/null 2>&1 && exit 1 || exit 0
+  ) && pass "checker catches an unknown tag hand-inserted into the database" \
+    || fail "checker missed an unknown tag in the database"
+  rm -f "$G/.ai/memory/agent_log.sqlite3"
+fi
+
+echo "== case: mem structured memory =="
+[ -f "$G/.ai/bin/mem" ] || fail "mem not installed"
+if command -v sqlite3 >/dev/null 2>&1; then
+  (
+    cd "$G"
+    bash .ai/bin/mem init >/dev/null || exit 1
+    rid=$(bash .ai/bin/mem log-run --slug feat-a --verdict PASS | tail -1)
+    [ "$rid" = "1" ] || { echo "log-run did not return id 1 (got '$rid')"; exit 1; }
+    bash .ai/bin/mem log-finding --run "$rid" --tag MISSING_TEST --file app/x.rb --desc t || exit 1
+    # unknown tag must be rejected at write time
+    bash .ai/bin/mem log-finding --run "$rid" --tag NOPE --desc t >/dev/null 2>&1 && exit 2
+    # a tag across 3 features must surface in recurring-tags; a one-off must not
+    for s in feat-b feat-c; do
+      r=$(bash .ai/bin/mem log-run --slug "$s" --verdict PASS | tail -1)
+      bash .ai/bin/mem log-finding --run "$r" --tag MISSING_TEST --desc t
+    done
+    r=$(bash .ai/bin/mem log-run --slug feat-d --verdict PASS | tail -1)
+    bash .ai/bin/mem log-finding --run "$r" --tag N_PLUS_ONE --desc once
+    out=$(bash .ai/bin/mem recurring-tags --min 3)
+    grep -q 'MISSING_TEST' <<<"$out" || exit 3
+    grep -q 'N_PLUS_ONE'  <<<"$out" && exit 4
+    exit 0
+  )
+  case "$?" in
+    0) pass "mem: log/query works, unknown tag rejected, recurrence aggregates" ;;
+    2) fail "mem accepted an unknown tag" ;;
+    3) fail "mem recurring-tags missed a tag across 3 features" ;;
+    4) fail "mem recurring-tags surfaced a one-off tag" ;;
+    *) fail "mem CLI failed a basic operation" ;;
+  esac
+  rm -f "$G/.ai/memory/agent_log.sqlite3"
+else
+  pass "mem installed (sqlite3 absent on runner — behavioral checks skipped)"
+fi
 
 echo "== case: brownfield install preserves existing files =="
 B="$WORK/brown"; mkdir -p "$B/.claude/agents"

@@ -1,7 +1,7 @@
 ---
 name: tech-lead
 description: Breaks feature requests into an ordered implementation plan with owners, dependencies, and acceptance criteria. Use at the start of any feature or non-trivial change, before code is written.
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, Bash
 model: opus
 ---
 
@@ -18,6 +18,9 @@ Load the shared brain — your plan must fit the existing system, not an imagine
 - `.ai/organization/coding_standards.md`
 - `.ai/organization/decision_log.md`
 - Relevant entries via `.ai/memory/INDEX.md` (read the index, then pull specifics)
+- Prior findings on the files you'll touch: `.ai/bin/mem findings --file <path>` —
+  a cheap query that surfaces mistakes already caught in that area, so the
+  plan can pre-empt them instead of rediscovering them in review.
 
 If the work directory contains a `brief.md`, read it first — it holds the
 clarified intent and the directions the user already rejected; don't re-open

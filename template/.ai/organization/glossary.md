@@ -21,9 +21,12 @@
   detectable.
 - **Circuit-breaker** — the same tag failing two consecutive rounds is named
   explicitly; a third round stops the loop and escalates to the user.
-- **Run record** — the durable distillation of a completed task in
-  `.ai/memory/runs/`: rounds, verdicts, tagged findings, expected → observed
-  decisions. The `team-analyst`'s dataset.
+- **Run record** — the durable distillation of a completed task, stored as rows
+  in the memory database (`.ai/memory/agent_log.sqlite3`) via `.ai/bin/mem`:
+  rounds, verdicts, tagged findings, expected → observed decisions. The
+  `team-analyst`'s dataset.
+- **`mem`** — `.ai/bin/mem`, the bash+sqlite3 tool that logs and queries the
+  structured learning data (runs, findings, decisions, reflections).
 - **Proposal** — an evidence-backed improvement written by the `team-analyst`
   to `.ai/memory/proposals/`; the `skill-builder` applies it only after the
   user approves.

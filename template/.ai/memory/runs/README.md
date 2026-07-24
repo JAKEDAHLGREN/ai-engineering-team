@@ -1,55 +1,49 @@
 # Run Records
 
-One file per completed multi-agent task, written by the Conductor at close-out
-by distilling the task's `.ai/work/{NNN}-{slug}/` artifacts. **This is the
-durable dataset the `team-analyst` mines** — the work directory is prunable
-scratch; the run record survives it. Each record gets one line in `../INDEX.md`.
+The structured record of every completed multi-agent task now lives in a
+queryable SQLite store, **not** in markdown files here. At close-out the
+Conductor distills the task's `.ai/work/{NNN}-{slug}/` artifacts into rows via
+`.ai/bin/mem` (see its `--help`). This is the durable dataset the `team-analyst`
+mines — the work directory is prunable scratch; the database survives it.
 
-File name: `YYYY-MM-DD-{NNN}-{slug}.md`
+Markdown run records were retired in favor of the database because grep over
+flat files can't aggregate ("which tag recurs across ≥3 features?") and forced
+agents to load whole files to answer narrow questions. The database queries and
+loads only what's asked for.
 
-## Format
+## What the Conductor writes at close-out
 
-Keep the line shapes exact — the analyst greps them.
+Distilling one task into rows (see `.ai/bin/mem --help` for exact flags):
 
-```markdown
-# Run — {NNN}-{slug}
-
-**Date:** YYYY-MM-DD · **Playbook:** feature_request · **Rounds:** N ·
-**Final verdict:** PASS | ESCALATED
-**Agents:** tech-lead, rails-engineer, qa-engineer, ...
-
-## Findings (all rounds)
-One line per finding, tags copied exactly from the verdicts **and the builder
-reports** (builders tag risks too — those belong in the dataset even though
-only verdict tags gate rounds):
-- [TAG] r{N} · file:line — description
-
-_(or "None.")_
-
-## Consequential decisions
-- {what was decided} — alternative: {what was rejected} — expected: {the bet} →
-  observed: {what actually happened, filled at close-out}
-
-_(or "None.")_
-
-## Struggles & assumptions
-From every report's Agent Notes:
-- {agent}: {assumption or struggle}
-
-_(or "None.")_
-
-## Escalations
-Circuit-breaker escalations, with the category that persisted:
-- [TAG] escalated after round 3 — {why}
-
-_(or "None.")_
+```bash
+RID=$(.ai/bin/mem log-run --slug {NNN}-{slug} --playbook feature_request --rounds N --verdict PASS)
+.ai/bin/mem log-finding    --run $RID --tag MISSING_TEST --round 1 --file app/x.rb --desc "..." --source verdict
+.ai/bin/mem log-decision   --run $RID --summary "..." --alternative "..." --expected "..." --observed "..."
+.ai/bin/mem log-reflection --run $RID --agent rails-engineer --type struggle --desc "..."
 ```
 
-## Rules
+- **Findings** come from every verdict *and* every builder report — builders tag
+  risks too. Tags are validated against `organization/finding_vocabulary.md` at
+  write time, so a typo can't enter the dataset.
+- **Decisions** carry the bet (`--expected`) and the result (`--observed`).
+  Fill `--observed` honestly at close-out — an expected outcome with no observed
+  result is a hypothesis nobody checked, and expectation *misses* are the most
+  valuable signal in the dataset.
+- **Escalations** are recorded as a run with `--verdict ESCALATED` plus the
+  finding tag that persisted.
 
-- **Append-only.** Never rewrite a past record — the history is the signal.
-- **Copy tags verbatim** from the verdict files. A retyped tag that drifts from
-  `organization/finding_vocabulary.md` breaks recurrence detection.
-- **Fill `observed:` honestly at close-out** — an expected outcome with no
-  observed result is a hypothesis nobody checked, and expectation *misses* are
-  the most valuable line in the whole record.
+Then append one human-readable line to `../INDEX.md` so people keep a browsable
+trail. `.ai/bin/mem runs` prints the same list from the database.
+
+## What still lives as markdown
+
+The narrative brain — architecture, ADRs, postmortems, `decision_log.md`,
+technical-debt notes, releases. Those are prose humans read and agents reason
+from; only the structured, aggregatable learning data moved to the database.
+
+## Database
+
+`.ai/memory/agent_log.sqlite3`, created on first use by `.ai/bin/mem init`. Requires the
+`sqlite3` CLI (ships with macOS; `apt install sqlite3` on Linux) — the binary
+only, unrelated to your application's database. Committed with the project so the
+learning history travels to fresh clones. Override the path with `AGENT_LOG_DB`.

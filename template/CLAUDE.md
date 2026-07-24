@@ -84,14 +84,15 @@ another; that routing is yours.
    silently re-route. If it fails a **third round, stop and escalate to the
    user**: three rounds of the same failure means the plan or the standards are
    wrong, not the engineer. Record the escalation in `.ai/memory/INDEX.md`.
-8. **Record.** Distill the work directory into a run record at
-   `.ai/memory/runs/` (format in its README): rounds, final verdict, every
-   tagged finding, consequential decisions with **expected → observed**
-   outcomes filled in honestly, and the Agent Notes. Append a one-line entry to
+8. **Record.** Distill the work directory into the structured store with
+   `.ai/bin/mem` (see `.ai/memory/runs/README.md`): `.ai/bin/mem log-run` for the task,
+   then `.ai/bin/mem log-finding` for every tagged finding from the verdicts and
+   reports, `.ai/bin/mem log-decision` with **expected → observed** outcomes filled in
+   honestly, and `.ai/bin/mem log-reflection` for the Agent Notes. An escalation is a
+   run logged with `--verdict ESCALATED`. Append a one-line entry to
    `.ai/memory/INDEX.md` and, for anything architecturally significant, a dated
    note in the relevant `memory/` folder. Then run `bash .ai/bin/check.sh` and
-   fix anything it flags — it mechanically verifies tags, verdict lines, and
-   run-record sections. Once it passes, the work directory is scratch — it may
+   fix anything it flags. Once it passes, the work directory is scratch — it may
    be archived or pruned.
 9. **Learn.** After roughly every 5 run records — or immediately after a
    circuit-breaker escalation — suggest running the `retrospective` playbook.
