@@ -141,6 +141,48 @@ Overwritten files are backed up to `.ai/.ait-backups/<timestamp>/` first, and si
 the team is committed in your project, `git diff` shows exactly what changed before
 you commit it. Nothing you wrote is ever silently lost.
 
+### Migrating a legacy install to the memory database
+
+Projects installed **before the memory database** stored the learning-loop data
+as markdown files under `.ai/memory/runs/`. The framework now uses a queryable
+SQLite store (`.ai/bin/mem` → `.ai/memory/agent_log.sqlite3`). `ait update`
+delivers the *framework-owned* half automatically (the `mem` and `check.sh`
+tools, the updated Conductor block, agents, and playbooks), but the store itself
+and the project-owned docs need three manual steps. Exact sequence:
+
+```bash
+# 1. Update the framework and adopt the framework-owned changes.
+cd ~/tools/ai-engineering-team && git pull
+~/tools/ai-engineering-team/bin/ait update /path/to/your/project
+
+cd /path/to/your/project
+
+# 2. Confirm the sqlite3 CLI is present (macOS ships it; Linux: apt install sqlite3).
+#    This is the CLI binary only — unrelated to your app's own database.
+sqlite3 --version
+
+# 3. Create the store (idempotent; safe to re-run).
+.ai/bin/mem init
+
+# 4. Replace the project-owned run-records README — ait update won't, because
+#    .ai/memory/ is yours — so the old markdown instructions don't linger.
+cp ~/tools/ai-engineering-team/template/.ai/memory/runs/README.md \
+   .ai/memory/runs/README.md
+
+# 5. Your old markdown run records aren't migrated (fresh start by design).
+#    Keep them as an archive so nothing is lost (skip if you have none):
+mkdir -p .ai/memory/runs/_archive
+git mv .ai/memory/runs/[0-9]*.md .ai/memory/runs/_archive/ 2>/dev/null || true
+
+# 6. Verify and commit — including the new database.
+bash .ai/bin/check.sh
+git add CLAUDE.md .claude .ai && git commit -m "Adopt the memory database"
+```
+
+From here the Conductor logs each completed task with `mem`, and the
+`team-analyst` queries the store during the `retrospective` playbook. Nothing
+you wrote is migrated or deleted without your hand in it.
+
 ---
 
 ## What gets installed
