@@ -164,9 +164,20 @@ Apply Robert's test to your five skills: *"What would an agent have to guess fro
 > model-split policy: `team-analyst` runs on opus (three opus agents, not two) —
 > cross-run synthesis is the hardest reasoning task in the framework and it runs
 > only every ~5 features, so the cost impact is negligible; flip its frontmatter
-> to sonnet if preferred. Not done (requires infrastructure, per the original
-> roadmap): event-driven triggers; SQLite port of run records remains optional
-> if grep-based analysis proves limiting.
+> to sonnet if preferred.
+>
+> **Follow-up (post-P5):** the SQLite port recommended in §4.1.2 is now shipped —
+> `.ai/bin/mem` stores runs, findings, decisions, and reflections in
+> `.ai/memory/agent_log.sqlite3`; the markdown run records were retired; the
+> `team-analyst` queries (and runs read-only SQL) instead of grepping; and
+> tech-lead/QA get a `mem findings --file` recall. This directly resolves the
+> grep-doesn't-aggregate limitation flagged in §2.4 and §4.1. The narrative brain
+> stays markdown by design. Prerequisite: the `sqlite3` CLI binary (ships on
+> macOS), unrelated to the app's own database.
+>
+> Not done (requires infrastructure, per the original roadmap): event-driven
+> triggers. Still open per Robert's later feedback: collapsing construction agents
+> into one `engineer` + skills, and the agent-prompt "beliefs" layer.
 
 ---
 
