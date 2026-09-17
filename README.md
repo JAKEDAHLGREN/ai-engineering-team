@@ -40,6 +40,7 @@ This is the load-bearing part, so it's stated plainly:
 
 The boundary, in one line: **agents = who, skills = how, playbooks = the sequence.**
 
+<img width="5495" height="5823" alt="diagram" src="https://github.com/user-attachments/assets/d082aec3-3927-4813-8795-c0efe857f88a" />
 ---
 
 ## Quick start — add the team to any project
